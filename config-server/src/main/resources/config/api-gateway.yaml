@@ -1,0 +1,33 @@
+server:
+  port: 9002
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: user-service
+              uri: lb://USER-SERVICE
+              predicates:
+                - Path=/api/user/**
+
+            - id: product-service
+              uri: lb://PRODUCT-SERVICE
+              predicates:
+                - Path=/api/product/**,/api/category/**
+
+            - id: order-service
+              uri: lb://ORDER-SERVICE
+              predicates:
+                - Path=/api/order/**
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+jwt:
+  secret:
+    key: de7391bbbd0a1f523dd33e7ad02114773f4629e6591f434350d95bd506366e16d0d9a0991839e3976c8308d14869161ef61ed5adf1e99d9844138a46e3fe0451

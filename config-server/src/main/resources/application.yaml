@@ -1,0 +1,13 @@
+server:
+  port: 9004
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: classpath:/config
+# native profile = use local configuration files instead of remote Git repo.

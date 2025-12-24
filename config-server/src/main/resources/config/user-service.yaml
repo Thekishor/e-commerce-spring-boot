@@ -1,0 +1,37 @@
+server:
+  port: 9000
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/user_db
+    username: postgres
+    password: kishor@2233#
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+mail:
+  hostname: smtp-relay.brevo.com
+  port: 587
+  username: 9487cf001@smtp-brevo.com
+  password: 8IhPqrEZsjA927wz
+user:
+  email: kishorpandey981@gmail.com
+backend_url: http://localhost:9000/api/user
+kafka:
+  topic:
+    name: order-event
+jwt:
+  secret:
+    key: de7391bbbd0a1f523dd33e7ad02114773f4629e6591f434350d95bd506366e16d0d9a0991839e3976c8308d14869161ef61ed5adf1e99d9844138a46e3fe0451

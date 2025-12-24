@@ -1,0 +1,31 @@
+services:
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    networks:
+      - kafka-net
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      - KAFKA_CFG_NODE_ID=1                       # A unique ID for this kafka instance
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller     # Kafka Acts as both broker and controller
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093       # Define who can vote in the controller quorum; part of KRart. Format nodeId@host:controller Port
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093 # PLAINTEXT is for client communication and CONTROLLER is for internal controller communication
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT # No TCP/SSL certificate uses or unencrypted
+      - KAFKA_CFG_INTERNAL_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092    # Producer and Consumer will connect to this address
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false                    # Kafka will not automatically create a topic
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1                 # We are running only one broker, so one replica is enough
+      - KAFKA_CFG_LOG_RETENTION_HOURS=168                            # Keep logs for 7 days
+      - KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS=0                 # No delay for consumer rebalancing
+      - KAFKA_KRAFT_CLUSTER_ID=gtd8f802f18e3194d                     # A unique ID for the Kafka cluster
+    volumes:
+      - kafka-data:/bitnami/kafka/data
+networks:
+  kafka-net:
+    driver: bridge
+
+volumes:
+  kafka-data:
