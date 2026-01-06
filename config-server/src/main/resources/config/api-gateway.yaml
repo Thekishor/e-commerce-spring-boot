@@ -1,6 +1,10 @@
 server:
   port: 9002
 spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
   cloud:
     gateway:
       server:
@@ -10,16 +14,34 @@ spring:
               uri: lb://USER-SERVICE
               predicates:
                 - Path=/api/user/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRates: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
 
             - id: product-service
               uri: lb://PRODUCT-SERVICE
               predicates:
                 - Path=/api/product/**,/api/category/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRates: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
 
             - id: order-service
               uri: lb://ORDER-SERVICE
               predicates:
                 - Path=/api/order/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRates: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
 eureka:
   instance:
     prefer-ip-address: true
