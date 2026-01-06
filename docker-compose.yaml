@@ -3,7 +3,7 @@ services:
     image: bitnami/kafka:latest
     container_name: kafka
     networks:
-      - kafka-net
+      - e-commerce-spring-boot
     ports:
       - "9092:9092"
       - "9093:9093"
@@ -23,8 +23,17 @@ services:
       - KAFKA_KRAFT_CLUSTER_ID=gtd8f802f18e3194d                     # A unique ID for the Kafka cluster
     volumes:
       - kafka-data:/bitnami/kafka/data
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - e-commerce-spring-boot
+
 networks:
-  kafka-net:
+  e-commerce-spring-boot:
     driver: bridge
 
 volumes:

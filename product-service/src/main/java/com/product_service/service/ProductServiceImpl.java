@@ -11,6 +11,9 @@ import com.product_service.repository.CategoryRepository;
 import com.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
 
+    @CachePut(value = "PRODUCT_CACHE", key = "#result.productId")
     @Override
     public ProductResponse createProduct(ProductRequest productRequest, String userId) {
         if (!categoryRepository.existsById(productRequest.getCategoryId())) {
@@ -85,6 +89,7 @@ public class ProductServiceImpl implements ProductService {
 
     private ProductResponse mapProductEntityToProductResponse(Product savedProduct) {
         return ProductResponse.builder()
+                .productId(savedProduct.getId())
                 .name(savedProduct.getName())
                 .price(savedProduct.getPrice())
                 .description(savedProduct.getDescription())
@@ -106,6 +111,7 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
+    @Cacheable(value = "PRODUCT_CACHE", key = "#id")
     @Override
     public ProductResponse getProductByID(Integer id) {
         Product product = productRepository.findById(id)
@@ -113,6 +119,7 @@ public class ProductServiceImpl implements ProductService {
         return mapProductEntityToProductResponse(product);
     }
 
+    @Cacheable(value = "PRODUCT_CACHE")
     @Override
     public Map<String, List<ProductResponse>> getAllProduct() {
         List<Product> products = productRepository.findAll();
@@ -121,6 +128,7 @@ public class ProductServiceImpl implements ProductService {
         return productResponses.stream().collect(Collectors.groupingBy(ProductResponse::getCategoryName));
     }
 
+    @CacheEvict(value = "PRODUCT_CACHE", key = "#id")
     @Override
     public void deleteProduct(Integer id) {
         Product product = productRepository.findById(id)
@@ -128,6 +136,7 @@ public class ProductServiceImpl implements ProductService {
         productRepository.delete(product);
     }
 
+    @CachePut(value = "PRODUCT_CACHE", key = "#result.productId")
     @Override
     public ProductResponse updateProduct(Integer id, ProductRequest productRequest) {
         Product product = productRepository.findById(id)
