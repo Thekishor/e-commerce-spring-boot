@@ -4,6 +4,7 @@ import com.product_service.dto.ProductRequest;
 import com.product_service.dto.ProductResponse;
 import com.product_service.dto.PurchaseRequest;
 import com.product_service.dto.PurchaseResponse;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,7 @@ public interface ProductService {
 
     ProductResponse getProductByID(Integer id);
 
-    Map<String, List<ProductResponse>> getAllProduct();
+    Map<String, List<ProductResponse>> getAllProduct(Pageable pageable, String search);
 
     void deleteProduct(Integer id);
 

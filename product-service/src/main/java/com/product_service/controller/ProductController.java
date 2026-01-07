@@ -8,6 +8,8 @@ import com.product_service.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -51,8 +53,22 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, List<ProductResponse>>> getAllProduct() {
-        Map<String, List<ProductResponse>> product = productService.getAllProduct();
+    public ResponseEntity<Map<String, List<ProductResponse>>> getAllProduct(
+            @RequestParam(required = false, defaultValue = "1") int pageNo,
+            @RequestParam(required = false, defaultValue = "5") int pageSize,
+            @RequestParam(required = false, defaultValue = "id") String sortBy,
+            @RequestParam(required = false, defaultValue = "ASC") String sortDir,
+            @RequestParam(required = false) String search
+    ) {
+        Sort sort = null;
+        if (sortDir.equalsIgnoreCase("ASC")) {
+            sort = Sort.by(sortBy).ascending();
+        } else {
+            sort = Sort.by(sortBy).descending();
+        }
+
+        PageRequest pageRequest = PageRequest.of(pageNo - 1, pageSize, sort);
+        Map<String, List<ProductResponse>> product = productService.getAllProduct(pageRequest, search);
         return new ResponseEntity<>(product, HttpStatus.OK);
     }
 

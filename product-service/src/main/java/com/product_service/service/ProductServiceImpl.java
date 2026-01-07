@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -121,8 +122,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Cacheable(value = "PRODUCT_CACHE")
     @Override
-    public Map<String, List<ProductResponse>> getAllProduct() {
-        List<Product> products = productRepository.findAll();
+    public Map<String, List<ProductResponse>> getAllProduct(Pageable pageable, String search) {
+        List<Product> products = List.of();
+        if (search == null) {
+            products = productRepository.findAll(pageable).getContent();
+        } else {
+            products = productRepository.findByName(search, pageable).getContent();
+        }
         List<ProductResponse> productResponses = products
                 .stream().map(this::mapProductEntityToProductResponse).toList();
         return productResponses.stream().collect(Collectors.groupingBy(ProductResponse::getCategoryName));
