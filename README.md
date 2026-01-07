@@ -12,6 +12,7 @@ This project demonstrates the implementation of real world microservice project 
 ### 2. Product Service
 - localhost:9001/api/product/**
 - Category and Product related operation and role based access control
+- Spring boot redis for caching like Cacheable, CachePut and CacheEvict
 - Using Request Header and identify users role then provide access resources
 
 ### 3. Order Service
@@ -32,12 +33,13 @@ This project demonstrates the implementation of real world microservice project 
 ### 6. Config Server
 - localhost:9004
 - All microservices configuration inside config server for access
+- config/**
 
 ### 7. Api Gateway
 - localhost:9002
-- All Service passed thorugh api gateway, validate jwt token and forward request to each microservice according to path matching approach
+- All Service passed through api gateway, validate jwt token and forward request to each microservice according to path matching approach
 - For example:
      http://localhost:9002/api/user/login -> for user login and access jwt token
 - Load balancing
 
-### docker-compose for bitnami kafka image
+### docker-compose for bitnami kafka image and redis with default ports
