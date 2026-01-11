@@ -8,6 +8,7 @@ This project demonstrates the implementation of real world microservice project 
 - Handles user register, login, jwt token, authorization code flow
 - Issues Jwt Token
 - Password changed, reset password, and verify email using java mail sender
+- user login attempts limits with redis spring boot, and temporary locked account for 20 minute
 
 ### 2. Product Service
 - localhost:9001/api/product/**
@@ -42,4 +43,4 @@ This project demonstrates the implementation of real world microservice project 
      http://localhost:9002/api/user/login -> for user login and access jwt token
 - Load balancing
 
-### docker-compose for bitnami kafka image and redis with default ports
+### docker-compose for bitnami kafka image and redis
