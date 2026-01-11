@@ -16,12 +16,22 @@ public class RedisConfig {
 
         ObjectMapper objectMapper = new ObjectMapper();
 
+        StringRedisSerializer redisSerializer =
+                new StringRedisSerializer();
+
+        GenericJacksonJsonRedisSerializer jacksonJsonRedisSerializer =
+                new GenericJacksonJsonRedisSerializer(objectMapper);
+
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new GenericJacksonJsonRedisSerializer(objectMapper));
-        redisTemplate.setHashValueSerializer(new GenericJacksonJsonRedisSerializer(objectMapper));
+
+        //key serializer
+        redisTemplate.setKeySerializer(redisSerializer);
+        redisTemplate.setHashKeySerializer(redisSerializer);
+
+        //value serializer
+        redisTemplate.setValueSerializer(jacksonJsonRedisSerializer);
+        redisTemplate.setHashValueSerializer(jacksonJsonRedisSerializer);
         return redisTemplate;
     }
 }

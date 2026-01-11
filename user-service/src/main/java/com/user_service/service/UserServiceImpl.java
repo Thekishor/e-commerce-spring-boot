@@ -7,12 +7,14 @@ import com.user_service.dto.UserResponse;
 import com.user_service.entities.PasswordResetToken;
 import com.user_service.entities.User;
 import com.user_service.entities.VerificationToken;
+import com.user_service.exception.BadCredentialsException;
 import com.user_service.exception.PasswordConflictException;
 import com.user_service.exception.UserAlreadyExistsException;
 import com.user_service.exception.UserNotFoundException;
 import com.user_service.repository.PasswordResetTokenRepository;
 import com.user_service.repository.UserRepository;
 import com.user_service.repository.VerificationTokenRepository;
+import com.user_service.security.CustomUserDetails;
 import com.user_service.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +27,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -45,6 +49,7 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final LoginAttemptService loginAttemptService;
 
     @Override
     public UserResponse createUser(UserRequest userRequest) {
@@ -140,19 +145,42 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Map<String, Object> generateJwtToken(AuthRequest authRequest) {
+
+        if (loginAttemptService.isBlocked(authRequest.getEmail())) {
+            log.error("User have been temporarily locked due to too many login attempts: {}", authRequest.getEmail());
+            throw new BadCredentialsException("You have been temporarily locked due to too many failed login attempts.");
+        }
+
         try {
-            authenticationManager.
-                    authenticate(new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword()));
-            User user =
-                    userRepository.findByEmail(authRequest.getEmail())
-                            .orElseThrow(() -> new UserNotFoundException("User not found with id"));
-            String token = jwtUtils.generateToken(authRequest.getEmail(), user);
+            final Authentication authenticate = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            authRequest.getEmail(),
+                            authRequest.getPassword())
+            );
+
+            log.info("Authentication user info from dao auth provider: {}", authenticate.getPrincipal());
+
+            final CustomUserDetails userDetails = (CustomUserDetails) authenticate.getPrincipal();
+            log.info("User information from db: {}", userDetails);
+
+            if (userDetails == null) {
+                log.info("User not found with email: {}", authRequest.getEmail());
+                throw new RuntimeException("Authentication failed");
+            }
+
+            loginAttemptService.loginSucceeded(userDetails.getUsername());
+            log.info("Login successful: {}", userDetails.getUsername());
+
+            String token = jwtUtils.generateToken(authRequest.getEmail(), userDetails);
             return Map.of(
                     "token", token,
-                    "expiration", "Your token will expire in 1 hours"
+                    "generatedAt", Instant.now().toString(),
+                    "expiresAt", Instant.now().plus(1, ChronoUnit.HOURS).toString()
             );
         } catch (Exception exception) {
-            throw new RuntimeException("Invalid email or password");
+            loginAttemptService.loginFailed(authRequest.getEmail());
+            log.info("Invalid username or password. {}", authRequest.getEmail());
+            throw new BadCredentialsException("Invalid username or password");
         }
     }
 

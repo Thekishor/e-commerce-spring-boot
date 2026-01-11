@@ -1,6 +1,6 @@
 package com.user_service.utils;
 
-import com.user_service.entities.User;
+import com.user_service.security.CustomUserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -21,11 +21,9 @@ public class JwtUtils {
     @Value("${jwt.secret.key}")
     private String SECRET_KEY;
 
-    public String generateToken(String email, User user) {
+    public String generateToken(String email, CustomUserDetails customUserDetails) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", user.getRole());
-        claims.put("userId", user.getUserId());
-        claims.put("email_verified", user.getEmailVerified());
+        claims.put("role", customUserDetails.getAuthorities());
         return createJwtToken(claims, email);
     }
 
