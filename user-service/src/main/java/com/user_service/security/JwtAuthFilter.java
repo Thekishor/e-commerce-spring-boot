@@ -1,6 +1,6 @@
 package com.user_service.security;
 
-import com.user_service.utils.JwtUtils;
+import com.user_service.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,7 +21,7 @@ import java.io.IOException;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final CustomUserDetailsService customUserDetailsService;
-    private final JwtUtils jwtUtils;
+    private final JwtService jwtUtils;
 
 
     @Override
@@ -34,10 +34,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String email = null;
         String token = null;
 
-        if (header != null && header.startsWith("Bearer ")) {
-            token = header.substring(7);
-            email = jwtUtils.extractUsername(token);
+        if (header == null || !header.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
         }
+
+        token = header.substring(7);
+        email = jwtUtils.extractUsername(token);
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);

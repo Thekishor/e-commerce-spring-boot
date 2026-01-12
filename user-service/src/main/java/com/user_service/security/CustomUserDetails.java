@@ -12,17 +12,19 @@ public class CustomUserDetails implements UserDetails {
 
     private final String email;
     private final String password;
-    private final String role;
+    private final List<String> roles;
 
-    public CustomUserDetails(String email, String password, String role) {
+    public CustomUserDetails(String email, String password, List<String> roles) {
         this.email = email;
         this.password = password;
-        this.role = role;
+        this.roles = roles;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role));
+        return roles.stream()
+                .map(SimpleGrantedAuthority::new)
+                .toList();
     }
 
     @Override

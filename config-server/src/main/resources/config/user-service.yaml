@@ -36,6 +36,11 @@ backend_url: http://localhost:9000/api/user
 kafka:
   topic:
     name: order-event
+app:
+  security:
+    jwt:
+      access-token-expiration: 1200000  #20 min
+      refresh-token-expiration: 172800000   #2 days
 jwt:
   secret:
-    key: de7391bbbd0a1f523dd33e7ad02114773f4629e6591f434350d95bd506366e16d0d9a0991839e3976c8308d14869161ef61ed5adf1e99d9844138a46e3fe0451
+    key: cMvhfWbh5R+PVQNy2Vda8pSYIxqWEdn1d1M5a/tjACIf6ZCjae9nwK76ONsnTupESdWZtqICdJflKjqan2PlmF5uejGTQdE7qZDVzTFovgIPUG2scweomsf2AbrQM528ODYiZYc2QpD5XZ7jHEHFuiyxvrwnfTJYDR6VbHNSUpM=

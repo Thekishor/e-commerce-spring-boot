@@ -33,7 +33,7 @@ public class Order {
     private PaymentMethod paymentMethod;
 
     @Column(nullable = false)
-    private String userId;
+    private String username;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

@@ -1,9 +1,6 @@
 package com.user_service.service;
 
-import com.user_service.dto.AuthRequest;
-import com.user_service.dto.SavePassword;
-import com.user_service.dto.UserRequest;
-import com.user_service.dto.UserResponse;
+import com.user_service.dto.*;
 import com.user_service.entities.PasswordResetToken;
 import com.user_service.entities.User;
 import com.user_service.entities.VerificationToken;
@@ -15,7 +12,6 @@ import com.user_service.repository.PasswordResetTokenRepository;
 import com.user_service.repository.UserRepository;
 import com.user_service.repository.VerificationTokenRepository;
 import com.user_service.security.CustomUserDetails;
-import com.user_service.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -47,7 +42,7 @@ public class UserServiceImpl implements UserService {
     private final VerificationTokenRepository verificationTokenRepository;
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
-    private final JwtUtils jwtUtils;
+    private final JwtService jwtservice;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final LoginAttemptService loginAttemptService;
 
@@ -78,7 +73,6 @@ public class UserServiceImpl implements UserService {
 
     private UserResponse mapUserEntityToUserResponse(User savedUser) {
         return UserResponse.builder()
-                .userId(savedUser.getUserId())
                 .username(savedUser.getUsername())
                 .isActive(savedUser.getIsActive())
                 .email(savedUser.getEmail())
@@ -158,9 +152,12 @@ public class UserServiceImpl implements UserService {
                             authRequest.getPassword())
             );
 
+            SecurityContextHolder.getContext().setAuthentication(authenticate);
+
             log.info("Authentication user info from dao auth provider: {}", authenticate.getPrincipal());
 
-            final CustomUserDetails userDetails = (CustomUserDetails) authenticate.getPrincipal();
+            final CustomUserDetails userDetails =
+                    (CustomUserDetails) authenticate.getPrincipal();
             log.info("User information from db: {}", userDetails);
 
             if (userDetails == null) {
@@ -171,17 +168,28 @@ public class UserServiceImpl implements UserService {
             loginAttemptService.loginSucceeded(userDetails.getUsername());
             log.info("Login successful: {}", userDetails.getUsername());
 
-            String token = jwtUtils.generateToken(authRequest.getEmail(), userDetails);
+            final String accessToken = jwtservice.generateAccessToken(userDetails.getUsername(), userDetails);
+            final String refreshToken = jwtservice.generateRefreshToken(userDetails.getUsername());
             return Map.of(
-                    "token", token,
-                    "generatedAt", Instant.now().toString(),
-                    "expiresAt", Instant.now().plus(1, ChronoUnit.HOURS).toString()
+                    "access_token", accessToken,
+                    "refresh_token", refreshToken,
+                    "generatedAt", Instant.now().toString()
             );
         } catch (Exception exception) {
             loginAttemptService.loginFailed(authRequest.getEmail());
             log.info("Invalid username or password. {}", authRequest.getEmail());
             throw new BadCredentialsException("Invalid username or password");
         }
+    }
+
+    @Override
+    public Map<String, Object> refreshToken(RefreshRequest refreshRequest) {
+        final String accessToken = jwtservice.refreshAccessToken(refreshRequest.getRefreshToken());
+        return Map.of(
+                "access_token", accessToken,
+                "refresh_token", refreshRequest.getRefreshToken(),
+                "generatedAt", Instant.now().toString()
+        );
     }
 
     @Override

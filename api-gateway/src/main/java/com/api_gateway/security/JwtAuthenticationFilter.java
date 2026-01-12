@@ -17,8 +17,6 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -36,27 +34,27 @@ public class JwtAuthenticationFilter implements WebFilter {
         if (requestToken != null && requestToken.startsWith("Bearer ")) {
             token = requestToken.substring(7);
 
+            if (jwtTokenHelper.isRefreshToken(token)) {
+                log.warn("Refresh token not allowed to access resources");
+                throw new RuntimeException("Refresh token not allowed to access resources");
+            }
+
             if (jwtTokenHelper.validateToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserResponse userResponse =
                         jwtTokenHelper.extractPayloadFromToken(token);
-
-                List<SimpleGrantedAuthority> authorities = List.of(
-                        new SimpleGrantedAuthority(userResponse.getRole())
-                );
 
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(
                                 userResponse,
                                 null,
-                                authorities
+                                userResponse.getRole().stream().map(SimpleGrantedAuthority::new).toList()
                         );
                 SecurityContext context = new SecurityContextImpl(authenticationToken);
 
                 //set the principal header in the request
                 ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
                         .header("X-User-Email", userResponse.getEmail())
-                        .header("X-User-Role", userResponse.getRole())
-                        .header("X-User-Id", userResponse.getUserId())
+                        .header("X-User-Role", userResponse.getRole().toString())
                         .build();
 
                 //create a new server web exchange with modified request

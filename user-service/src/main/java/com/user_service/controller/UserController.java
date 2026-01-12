@@ -67,6 +67,12 @@ public class UserController {
         }
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
+        Map<String, Object> objectMap = userService.refreshToken(refreshRequest);
+        return new ResponseEntity<>(objectMap, HttpStatus.OK);
+    }
+
     @PostMapping("/changePassword")
     public ResponseEntity<Map<String, String>> changePassword(
             @Valid @RequestBody PasswordModel passwordModel

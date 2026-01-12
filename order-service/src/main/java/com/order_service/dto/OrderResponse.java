@@ -14,5 +14,5 @@ public class OrderResponse {
     private String reference;
     private Long amount;
     private PaymentMethod paymentMethod;
-    private String userId;
+    private String username;
 }

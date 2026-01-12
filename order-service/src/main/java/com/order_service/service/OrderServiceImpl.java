@@ -40,7 +40,7 @@ public class OrderServiceImpl implements OrderService {
                 productClient.purchaseResponses(orderRequest.getPurchaseRequest(), authHeader);
 
         Order order = mapOrderRequestToOrderEntity(orderRequest);
-        order.setUserId(userId);
+        order.setUsername(userResponse.getEmail());
         order.setAmount(purchaseResponses.stream().mapToLong(PurchaseResponse::getPrice).sum());
         Order savedOrder = orderRepository.save(order);
 
@@ -76,7 +76,7 @@ public class OrderServiceImpl implements OrderService {
                 .reference(savedOrder.getReference())
                 .amount(savedOrder.getAmount())
                 .paymentMethod(savedOrder.getPaymentMethod())
-                .userId(savedOrder.getUserId())
+                .username(savedOrder.getUsername())
                 .build();
     }
 

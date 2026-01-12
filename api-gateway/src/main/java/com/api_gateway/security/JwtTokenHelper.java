@@ -5,12 +5,14 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Base64;
+import java.util.List;
 
 @Component
 public class JwtTokenHelper {
@@ -33,19 +35,25 @@ public class JwtTokenHelper {
         }
     }
 
-    private Claims extractAllClaims(String token) {
+    private Claims extractClaims(String token) {
         return Jwts.parser()
                 .verifyWith((SecretKey) secret_key)
                 .build()
                 .parseSignedClaims(token).getPayload();
     }
 
+    public boolean isRefreshToken(String token) {
+        final Claims claims = extractClaims(token);
+        return "REFRESH_TOKEN".equals(claims.get("token_type"));
+    }
+
     public UserResponse extractPayloadFromToken(String token) {
-        Claims claims = extractAllClaims(token);
+        Claims claims = extractClaims(token);
+        List<String> roles = (List<String>) claims.get("role");
+
         return UserResponse.builder()
-                .userId((String) claims.get("userId"))
                 .email(claims.getSubject())
-                .role((String) claims.get("role"))
+                .role(roles)
                 .build();
     }
 }

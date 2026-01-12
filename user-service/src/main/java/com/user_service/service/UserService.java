@@ -1,9 +1,6 @@
 package com.user_service.service;
 
-import com.user_service.dto.AuthRequest;
-import com.user_service.dto.SavePassword;
-import com.user_service.dto.UserRequest;
-import com.user_service.dto.UserResponse;
+import com.user_service.dto.*;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +20,8 @@ public interface UserService {
     boolean isAccountActive(String email);
 
     Map<String, Object> generateJwtToken(AuthRequest authRequest);
+
+    Map<String, Object> refreshToken(RefreshRequest refreshRequest);
 
     boolean checkIfValidOldPassword(String oldPassword);
 

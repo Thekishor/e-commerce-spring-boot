@@ -2,6 +2,8 @@ package com.api_gateway.dto;
 
 import lombok.*;
 
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -9,9 +11,6 @@ import lombok.*;
 @Builder
 public class UserResponse {
 
-    private String userId;
-    private String username;
     private String email;
-    private String role;
-    private Boolean isActive;
+    private List<String> role;
 }

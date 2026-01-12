@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "user_db")
@@ -31,7 +32,7 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    private String role;
+    private List<String> role;
 
     private Boolean isActive;
 
@@ -47,7 +48,7 @@ public class User {
     @PrePersist
     public void setUserDetails() {
         if (this.role == null) {
-            this.role = "USER";
+            this.role = List.of("USER");
         }
         if (this.isActive == null) {
             this.isActive = false;
