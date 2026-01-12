@@ -5,8 +5,8 @@ This project demonstrates the implementation of real world microservice project 
 
 ### 1. User Service
 - localhost:9000/api/user/**
-- Handles user register, login, jwt token, authorization code flow
-- Issues Jwt Token
+- Handles user register, login, jwt token (access and refresh token), authorization code flow
+- Issues Jwt Token(access token) and Refresh Token
 - Password changed, reset password, and verify email using java mail sender
 - user login attempts limits with redis spring boot, and temporary locked account for 20 minute
 
@@ -40,7 +40,7 @@ This project demonstrates the implementation of real world microservice project 
 - localhost:9002
 - All Service passed through api gateway, validate jwt token and forward request to each microservice according to path matching approach
 - For example:
-     http://localhost:9002/api/user/login -> for user login and access jwt token
+     http://localhost:9002/api/user/login -> for user login and access jwt token for 20 min, refresh token for 2 days
 - Load balancing
 
 ### docker-compose for bitnami kafka image and redis
