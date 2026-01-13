@@ -1,6 +1,5 @@
 package com.notification_service.service;
 
-import com.notification_service.constant.NotificationType;
 import com.notification_service.entities.Notification;
 import com.notification_service.repository.NotificationRepository;
 import jakarta.mail.MessagingException;
@@ -26,7 +25,7 @@ public class KafkaConsumer {
 
         notificationRepository.save(
                 Notification.builder()
-                        .notificationType(NotificationType.ORDER_EVENT)
+                        .notificationType("order-event")
                         .localDateTime(LocalDateTime.now())
                         .userEmail(orderEvent.getEmail())
                         .build()

@@ -11,6 +11,7 @@ import java.util.List;
 @Builder
 public class UserResponse {
 
+    private String userId;
     private String email;
     private List<String> role;
 }

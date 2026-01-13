@@ -4,7 +4,6 @@ import com.order_service.constant.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,7 +32,7 @@ public class Order {
     private PaymentMethod paymentMethod;
 
     @Column(nullable = false)
-    private String username;
+    private String userId;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

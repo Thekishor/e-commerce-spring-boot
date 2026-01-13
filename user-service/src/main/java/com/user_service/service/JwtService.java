@@ -26,7 +26,8 @@ import java.util.Map;
 public class JwtService {
 
     private static final String TOKEN_TYPE = "token_type";
-    private static final String ROLE = "role";
+    private static final String ROLE = "roles";
+    private static final String USER_ID = "userId";
 
     @Value("${app.security.jwt.access-token-expiration}")
     private long accessTokenExpirationTime;
@@ -42,6 +43,7 @@ public class JwtService {
     public String generateAccessToken(final String username, CustomUserDetails customUserDetails) {
         final Map<String, Object> claims = new HashMap<>();
         List<String> roles = customUserDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+        claims.put(USER_ID, customUserDetails.getUserId());
         claims.put(ROLE, roles);
         claims.put(TOKEN_TYPE, "ACCESS_TOKEN");
         return buildToken(username, claims, accessTokenExpirationTime);

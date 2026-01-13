@@ -5,8 +5,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -26,7 +27,8 @@ public class JwtTokenHelper {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().verifyWith((SecretKey) secret_key)
+            Jwts.parser()
+                    .verifyWith((SecretKey) secret_key)
                     .build()
                     .parseSignedClaims(token);
             return true;
@@ -49,9 +51,16 @@ public class JwtTokenHelper {
 
     public UserResponse extractPayloadFromToken(String token) {
         Claims claims = extractClaims(token);
-        List<String> roles = (List<String>) claims.get("role");
+        ObjectMapper mapper = new ObjectMapper();
 
-        return UserResponse.builder()
+        List<String> roles = mapper.convertValue(
+                claims.get("roles"), new TypeReference<List<String>>() {
+                }
+        );
+
+        return UserResponse
+                .builder()
+                .userId(claims.get("userId").toString())
                 .email(claims.getSubject())
                 .role(roles)
                 .build();

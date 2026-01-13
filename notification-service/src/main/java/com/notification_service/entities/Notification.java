@@ -1,6 +1,5 @@
 package com.notification_service.entities;
 
-import com.notification_service.constant.NotificationType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +18,7 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private NotificationType notificationType;
+    private String notificationType;
 
     private LocalDateTime localDateTime;
 

@@ -1,6 +1,7 @@
 package com.api_gateway.security;
 
 import com.api_gateway.dto.UserResponse;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -25,8 +26,10 @@ public class JwtAuthenticationFilter implements WebFilter {
     private final JwtTokenHelper jwtTokenHelper;
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-
+    public Mono<Void> filter(
+            @NonNull ServerWebExchange exchange,
+            @NonNull WebFilterChain chain
+    ) {
         String requestToken
                 = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         String token = null;
@@ -54,7 +57,8 @@ public class JwtAuthenticationFilter implements WebFilter {
                 //set the principal header in the request
                 ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
                         .header("X-User-Email", userResponse.getEmail())
-                        .header("X-User-Role", userResponse.getRole().toString())
+                        .header("X-User-Id", userResponse.getUserId())
+                        .header("X-User-Roles", userResponse.getRole().toString())
                         .build();
 
                 //create a new server web exchange with modified request

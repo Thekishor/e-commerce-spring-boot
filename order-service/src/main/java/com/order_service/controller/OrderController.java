@@ -51,12 +51,12 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<?> findAllOrders(
-            @RequestHeader("X-User-Email") String email,
-            @RequestHeader("X-User-Role") String role
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Roles") List<String> roles
     ) {
-        if (role.equals("ADMIN")) {
+        if (roles.contains("ADMIN")) {
             List<OrderResponse> orderResponses = orderService.getAllOrders();
-            log.info("Order responses details seen by user: {} {}", email, role);
+            log.info("Order responses details seen by user: {} {}", userId, roles);
             return new ResponseEntity<>(orderResponses, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(Map.of(

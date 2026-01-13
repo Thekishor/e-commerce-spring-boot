@@ -24,7 +24,7 @@ public class Product {
 
     private Long price;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "user_id")
     private String userId;
 
     @ManyToOne(fetch = FetchType.EAGER)

@@ -26,10 +26,11 @@ public class CategoryController {
     public ResponseEntity<?> createCategory(
             @Valid @RequestBody CategoryRequest categoryRequest,
             @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Role") String role
+            @RequestHeader("X-User-Roles") List<String> roles
     ) {
-        if (role.equals("ADMIN")) {
+        if (roles.contains("ADMIN") || roles.contains("CREATOR")) {
             CategoryResponse categoryResponse = categoryService.createCategory(categoryRequest, userId);
+            log.info("Category created successfully: {}", categoryResponse.getName());
             return new ResponseEntity<>(categoryResponse, HttpStatus.CREATED);
         } else {
             return new ResponseEntity<>(Map.of(
@@ -55,12 +56,12 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCategory(
             @PathVariable("id") Integer id,
-            @RequestHeader("X-User-Email") String email,
-            @RequestHeader("X-User-Role") String role
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Roles") String roles
     ) {
-        if (role.equals("ADMIN")) {
+        if (roles.contains("ADMIN")) {
             categoryService.deleteCategory(id);
-            log.info("Category deleted by user: {} {} ", email, role);
+            log.info("Category deleted by user: {} {} ", userId, roles);
             return new ResponseEntity<>(Map.of(
                     "message", "Category Deleted Successfully"
             ), HttpStatus.NOT_FOUND);
@@ -77,12 +78,12 @@ public class CategoryController {
     public ResponseEntity<?> updateCategory(
             @PathVariable("id") Integer id,
             @Valid @RequestBody CategoryRequest categoryRequest,
-            @RequestHeader("X-User-Email") String email,
-            @RequestHeader("X-User-Role") String role
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Roles") String roles
     ) {
-        if (role.equals("ADMIN")) {
+        if (roles.contains("ADMIN")) {
             CategoryResponse categoryResponse = categoryService.updateCategory(id, categoryRequest);
-            log.info("Category updated successfully by user: {} {}", email, role);
+            log.info("Category updated successfully by user: {} {}", userId, roles);
             return new ResponseEntity<>(categoryResponse, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(Map.of(

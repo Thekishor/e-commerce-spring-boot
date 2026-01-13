@@ -13,8 +13,11 @@ import org.springframework.stereotype.Service;
 import common.events.kafkaEvents.OrderEvent;
 import common.events.kafkaEvents.PurchaseResponse;
 
+import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +43,7 @@ public class OrderServiceImpl implements OrderService {
                 productClient.purchaseResponses(orderRequest.getPurchaseRequest(), authHeader);
 
         Order order = mapOrderRequestToOrderEntity(orderRequest);
-        order.setUsername(userResponse.getEmail());
+        order.setUserId(userId);
         order.setAmount(purchaseResponses.stream().mapToLong(PurchaseResponse::getPrice).sum());
         Order savedOrder = orderRepository.save(order);
 
@@ -76,16 +79,30 @@ public class OrderServiceImpl implements OrderService {
                 .reference(savedOrder.getReference())
                 .amount(savedOrder.getAmount())
                 .paymentMethod(savedOrder.getPaymentMethod())
-                .username(savedOrder.getUsername())
+                .username(savedOrder.getUserId())
                 .build();
     }
 
     private Order mapOrderRequestToOrderEntity(OrderRequest orderRequest) {
+        final String orderNumber = generateOrderNumber();
         return Order.builder()
-                .orderNumber(UUID.randomUUID().toString())
+                .orderNumber(orderNumber)
                 .reference(orderRequest.getReference())
                 .paymentMethod(orderRequest.getPaymentMethod())
                 .build();
+    }
+
+    private String generateOrderNumber() {
+        String alphanumeric = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        SecureRandom random = new SecureRandom();
+
+        //Prefix + date part
+        String orderPrefix = "ORD-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        StringBuilder randomPart = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            randomPart.append(alphanumeric.charAt(random.nextInt(alphanumeric.length())));
+        }
+        return orderPrefix + "-" + randomPart.toString();
     }
 
     @Override

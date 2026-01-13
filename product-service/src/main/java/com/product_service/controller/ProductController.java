@@ -30,9 +30,9 @@ public class ProductController {
     public ResponseEntity<?> createProduct(
             @Valid @RequestBody ProductRequest productRequest,
             @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Role") String role
+            @RequestHeader("X-User-Roles") List<String> roles
     ) {
-        if (role.equals("ADMIN")) {
+        if (roles.contains("ADMIN") || roles.contains("CREATOR")) {
             ProductResponse response = productService.createProduct(productRequest, userId);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } else {
@@ -81,12 +81,12 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProduct(
             @PathVariable("id") Integer id,
-            @RequestHeader("X-User-Email") String email,
-            @RequestHeader("X-User-Role") String role
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Roles") List<String> roles
     ) {
-        if (role.equals("ADMIN")) {
+        if (roles.contains("ADMIN")) {
             productService.deleteProduct(id);
-            log.info("Product deleted by user: {} {}", email, role);
+            log.info("Product deleted by user: {} {}", userId, roles);
             return new ResponseEntity<>(Map.of(
                     "message", "Product deleted successfully"
             ), HttpStatus.NOT_FOUND);
@@ -102,12 +102,12 @@ public class ProductController {
     public ResponseEntity<?> updateProduct(
             @PathVariable("id") Integer id,
             @Valid @RequestBody ProductRequest productRequest,
-            @RequestHeader("X-User-Email") String email,
-            @RequestHeader("X-User-Role") String role
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Roles") List<String> roles
     ) {
-        if (role.equals("ADMIN")) {
+        if (roles.contains("ADMIN")) {
             ProductResponse productResponse = productService.updateProduct(id, productRequest);
-            log.info("Product updated by user: {} {}", email, role);
+            log.info("Product updated by user: {} {}", userId, roles);
             return new ResponseEntity<>(productResponse, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(Map.of(
