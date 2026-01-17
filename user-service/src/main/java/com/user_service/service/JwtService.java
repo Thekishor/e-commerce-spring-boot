@@ -1,5 +1,6 @@
 package com.user_service.service;
 
+import com.user_service.repository.JwtTokenRepository;
 import com.user_service.security.CustomUserDetails;
 import com.user_service.security.CustomUserDetailsService;
 import io.jsonwebtoken.*;
@@ -39,6 +40,7 @@ public class JwtService {
     private String SECRET_KEY;
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtTokenRepository jwtTokenRepository;
 
     public String generateAccessToken(final String username, CustomUserDetails customUserDetails) {
         final Map<String, Object> claims = new HashMap<>();
@@ -122,7 +124,20 @@ public class JwtService {
             throw new RuntimeException("Refresh token expired");
         }
 
+        //check if the refresh token is blacklisted or not
+        if (jwtTokenRepository.isRefreshTokenBlockListed(refreshToken)) {
+            throw new RuntimeException("ERROR: Refresh token is blacklisted");
+        }
+
         String username = extractUsername(refreshToken);
+
+        //verify token matches stored token for user
+        String storedRefreshToken = jwtTokenRepository.getRefreshToken(username);
+
+        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
+            throw new RuntimeException("ERROR: Invalid refresh token");
+        }
+
         final CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(username);
 
         UsernamePasswordAuthenticationToken authenticationToken =
@@ -131,6 +146,14 @@ public class JwtService {
                         null,
                         userDetails.getAuthorities()
                 );
-        return generateAccessToken(claims.getSubject(), userDetails);
+        String accessToken = generateAccessToken(claims.getSubject(), userDetails);
+
+        //update access token in redis db
+        jwtTokenRepository.removeAccessToken(userDetails.getUsername());
+
+        // Add new access token in redis
+        jwtTokenRepository.storeToken(userDetails.getUsername(), accessToken, refreshToken);
+
+        return accessToken;
     }
 }

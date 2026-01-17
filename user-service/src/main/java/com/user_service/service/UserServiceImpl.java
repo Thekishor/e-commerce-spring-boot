@@ -8,6 +8,7 @@ import com.user_service.exception.BadCredentialsException;
 import com.user_service.exception.PasswordConflictException;
 import com.user_service.exception.UserAlreadyExistsException;
 import com.user_service.exception.UserNotFoundException;
+import com.user_service.repository.JwtTokenRepository;
 import com.user_service.repository.PasswordResetTokenRepository;
 import com.user_service.repository.UserRepository;
 import com.user_service.repository.VerificationTokenRepository;
@@ -27,6 +28,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -45,6 +47,7 @@ public class UserServiceImpl implements UserService {
     private final JwtService jwtservice;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final LoginAttemptService loginAttemptService;
+    private final JwtTokenRepository jwtTokenRepository;
 
     @Override
     public UserResponse createUser(UserRequest userRequest) {
@@ -170,9 +173,18 @@ public class UserServiceImpl implements UserService {
 
             final String accessToken = jwtservice.generateAccessToken(userDetails.getUsername(), userDetails);
             final String refreshToken = jwtservice.generateRefreshToken(userDetails.getUsername());
+
+            //store tokens inside redis
+            jwtTokenRepository.storeToken(
+                    userDetails.getUsername(),
+                    accessToken,
+                    refreshToken
+            );
+
             return Map.of(
                     "access_token", accessToken,
                     "refresh_token", refreshToken,
+                    "authorities", userDetails.getAuthorities(),
                     "generatedAt", Instant.now().toString()
             );
         } catch (Exception exception) {
@@ -180,6 +192,16 @@ public class UserServiceImpl implements UserService {
             log.info("Invalid username or password. {}", authRequest.getEmail());
             throw new BadCredentialsException("Invalid username or password");
         }
+    }
+
+    @Override
+    public void logout() {
+        //Get current auth user from security context holder
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder
+                .getContext().getAuthentication();
+
+        //Remove all tokens for this user
+        jwtTokenRepository.removeAllTokens(Objects.requireNonNull(customUserDetails).getUsername());
     }
 
     @Override

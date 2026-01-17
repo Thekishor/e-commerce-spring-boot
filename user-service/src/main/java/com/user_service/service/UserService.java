@@ -21,6 +21,8 @@ public interface UserService {
 
     Map<String, Object> generateJwtToken(AuthRequest authRequest);
 
+    void logout();
+
     Map<String, Object> refreshToken(RefreshRequest refreshRequest);
 
     boolean checkIfValidOldPassword(String oldPassword);

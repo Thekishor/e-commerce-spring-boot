@@ -39,6 +39,7 @@ public class SecurityConfig {
                                 "/api/user/savePassword",
                                 "/actuator/**").permitAll()
                         .anyRequest().authenticated())
+                .userDetailsService(customUserDetailsService)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

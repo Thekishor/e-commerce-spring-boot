@@ -67,6 +67,12 @@ public class UserController {
         }
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout() {
+        userService.logout();
+        return ResponseEntity.ok("You have been signed out");
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
         Map<String, Object> objectMap = userService.refreshToken(refreshRequest);
