@@ -197,11 +197,16 @@ public class UserServiceImpl implements UserService {
     @Override
     public void logout() {
         //Get current auth user from security context holder
-        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder
-                .getContext().getAuthentication();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null) {
+            log.warn("User not found with email");
+            throw new RuntimeException("Authentication failed");
+        }
 
         //Remove all tokens for this user
-        jwtTokenRepository.removeAllTokens(Objects.requireNonNull(customUserDetails).getUsername());
+        jwtTokenRepository.removeAllTokens(authentication.getName());
     }
 
     @Override

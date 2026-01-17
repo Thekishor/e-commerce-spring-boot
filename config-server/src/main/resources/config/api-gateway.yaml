@@ -30,4 +30,4 @@ eureka:
       defaultZone: http://localhost:8761/eureka
 jwt:
   secret:
-    key: cMvhfWbh5R+PVQNy2Vda8pSYIxqWEdn1d1M5a/tjACIf6ZCjae9nwK76ONsnTupESdWZtqICdJflKjqan2PlmF5uejGTQdE7qZDVzTFovgIPUG2scweomsf2AbrQM528ODYiZYc2QpD5XZ7jHEHFuiyxvrwnfTJYDR6VbHNSUpM=
+    key: tZr3dTw1SRFG/hY9a9Z51NTw3gVqoyFJOM87s2qlMEQtf4hV7WQMTROJ9JdLxHze0ueD44PT1kvSJX7l3z8m+Q==

@@ -28,6 +28,7 @@ public class SecurityConfig {
                         .pathMatchers(
                                 "/api/user/login",
                                 "/api/user/register",
+                                "/api/user/refresh",
                                 "/api/user/activate",
                                 "/api/user/resetPassword",
                                 "/api/user/savePassword",

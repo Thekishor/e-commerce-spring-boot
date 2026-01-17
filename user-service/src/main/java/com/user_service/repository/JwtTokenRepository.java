@@ -5,6 +5,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.concurrent.TimeUnit;
 
@@ -67,8 +68,9 @@ public class JwtTokenRepository {
     }
 
     private String getToken(String key) {
-        Object token = redisTemplate.opsForValue().get(key);
-        return token != null ? token.toString() : null;
+        ObjectMapper mapper = new ObjectMapper();
+        Object object = redisTemplate.opsForValue().get(key);
+        return mapper.convertValue(object, String.class);
     }
 
     /*
