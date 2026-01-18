@@ -1,8 +1,8 @@
 # e-commerce-spring-boot
 
-### Designed and implemented a spring boot microservices architecture with jwt-based auth (access + refresh token), kafka event-driven messaging, and api gateway security
-### Implemented role-based access control and email verification using JavaMail
-### Containerized redis and kafka using Docker and Docker Compose
+- Designed and implemented a spring boot microservices architecture with jwt-based auth (access + refresh token), kafka event-driven messaging, and api gateway security
+- Implemented role-based access control and email verification using JavaMail
+- Containerized redis and kafka using Docker and Docker Compose
 
 ## Modules
 - Backend: Java 21, Spring Boot, Spring Security
