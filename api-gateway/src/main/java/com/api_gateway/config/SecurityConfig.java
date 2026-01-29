@@ -2,6 +2,7 @@ package com.api_gateway.config;
 
 import com.api_gateway.security.JwtAuthenticationEntryPoint;
 import com.api_gateway.security.JwtAuthenticationFilter;
+import common.events.utils.PermitUrls;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,15 +26,8 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchange -> exchange
-                        .pathMatchers(
-                                "/api/user/login",
-                                "/api/user/register",
-                                "/api/user/refresh",
-                                "/api/user/activate",
-                                "/api/user/resetPassword",
-                                "/api/user/savePassword",
-                                "/actuator/**")
-                        .permitAll()
+                        .pathMatchers(PermitUrls.SERVICE_URLS).permitAll()
+                        .pathMatchers(PermitUrls.OPENAPI_URLS).permitAll()
                         .anyExchange().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)

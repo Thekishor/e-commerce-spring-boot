@@ -2,6 +2,8 @@ package com.user_service.controller;
 
 import com.user_service.dto.*;
 import com.user_service.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,20 @@ public class UserController {
 
     private final UserService userService;
 
+    @Operation(
+            description = "user register",
+            summary = "Create user account/ New user signup",
+            responses = {
+                    @ApiResponse(
+                            description = "Success",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "Internal Server Error",
+                            responseCode = "500"
+                    )
+            }
+    )
     @PostMapping("/register")
     public ResponseEntity<Map<String, String>> createUser(
             @Valid @RequestBody UserRequest userRequest
@@ -33,6 +49,9 @@ public class UserController {
         ), HttpStatus.CREATED);
     }
 
+    @Operation(
+            description = ""
+    )
     @GetMapping("/activate")
     public ResponseEntity<String> activateProfile(@RequestParam String token) {
         try {
@@ -48,6 +67,20 @@ public class UserController {
         }
     }
 
+    @Operation(
+            description = "user login",
+            summary = "user login rate limit",
+            responses = {
+                    @ApiResponse(
+                            description = "Success",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "Invalid username or password",
+                            responseCode = "401"
+                    )
+            }
+    )
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody AuthRequest authRequest) {
         try {
@@ -67,12 +100,30 @@ public class UserController {
         }
     }
 
+    @Operation(
+            description = "logout user",
+            summary = "user logout",
+            responses = {
+                    @ApiResponse(
+                            description = "Success",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "Internal Server Error",
+                            responseCode = "401"
+                    )
+            }
+    )
     @PostMapping("/logout")
     public ResponseEntity<String> logout() {
         userService.logout();
         return ResponseEntity.ok("You have been signed out");
     }
 
+    @Operation(
+            description = "refresh token",
+            summary = "refresh token for new access token"
+    )
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
         Map<String, Object> objectMap = userService.refreshToken(refreshRequest);

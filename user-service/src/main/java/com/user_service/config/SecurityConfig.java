@@ -2,6 +2,7 @@ package com.user_service.config;
 
 import com.user_service.security.CustomUserDetailsService;
 import com.user_service.security.JwtAuthFilter;
+import common.events.utils.PermitUrls;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,14 +32,8 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/user/login",
-                                "/api/user/register",
-                                "/api/user/refresh",
-                                "/api/user/activate",
-                                "/api/user/resetPassword",
-                                "/api/user/savePassword",
-                                "/actuator/**").permitAll()
+                        .requestMatchers(PermitUrls.SERVICE_URLS).permitAll()
+                        .requestMatchers(PermitUrls.OPENAPI_URLS).permitAll()
                         .anyRequest().authenticated())
                 .userDetailsService(customUserDetailsService)
                 .sessionManagement(session ->
