@@ -12,7 +12,7 @@
 - Database: Postgres, Redis
 - Email: JavaMail (Brevo SMTP)
 - Containerization: Docker, Docker Compose
-- Build Tool: Maven
+- Build Tool: Maven, Swagger OpenAPI
 
 ### 1. User Service
 - localhost:9000/api/user/**
@@ -23,6 +23,7 @@
 - Role-based authorization (ADMIN/USER)
 - User login attempts limit with redis 
 - JWT access token are short-lived, while refresh token are stored securely and rotated
+- Swagger Api for documentation
 
 ### 2. Product Service
 - localhost:9001/api/product/**
