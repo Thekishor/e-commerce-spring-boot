@@ -24,7 +24,7 @@ eureka:
 mail:
   hostname: smtp-relay.brevo.com
   port: 587
-  username: 9487cf001@smtp-brevo.com
-  password: 8IhPqrEZsjA927wz
+  username: ${MAIL_USERNAME:9487cf001@smtp-brevo.com}
+  password: ${MAIL_PASSWORD:8IhPqrEZsjA927wz}
 user:
   email: kishorpandey981@gmail.com

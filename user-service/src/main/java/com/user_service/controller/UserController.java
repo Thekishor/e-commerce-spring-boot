@@ -2,6 +2,7 @@ package com.user_service.controller;
 
 import com.user_service.dto.*;
 import com.user_service.service.UserService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
@@ -49,9 +50,7 @@ public class UserController {
         ), HttpStatus.CREATED);
     }
 
-    @Operation(
-            description = ""
-    )
+    @Hidden
     @GetMapping("/activate")
     public ResponseEntity<String> activateProfile(@RequestParam String token) {
         try {
@@ -130,6 +129,20 @@ public class UserController {
         return new ResponseEntity<>(objectMap, HttpStatus.OK);
     }
 
+    @Operation(
+            description = "change password",
+            summary = "change user password",
+            responses = {
+                    @ApiResponse(
+                            description = "Success",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "Internal Server Error",
+                            responseCode = "401"
+                    )
+            }
+    )
     @PostMapping("/changePassword")
     public ResponseEntity<Map<String, String>> changePassword(
             @Valid @RequestBody PasswordModel passwordModel
@@ -155,6 +168,20 @@ public class UserController {
         ), HttpStatus.OK);
     }
 
+    @Operation(
+            description = "reset password",
+            summary = "reset user password",
+            responses = {
+                    @ApiResponse(
+                            description = "Success",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "Internal Server Error",
+                            responseCode = "401"
+                    )
+            }
+    )
     @PostMapping("/resetPassword")
     public ResponseEntity<Map<String, String>> resetPassword(
             @Valid @RequestBody ResetPasswordModel resetPasswordModel
@@ -165,6 +192,7 @@ public class UserController {
         ), HttpStatus.OK);
     }
 
+    @Hidden
     @PostMapping("/savePassword")
     public ResponseEntity<Map<String, String>> savePassword(
             @RequestParam("token") String token,
@@ -181,6 +209,20 @@ public class UserController {
         ), HttpStatus.BAD_REQUEST);
     }
 
+    @Operation(
+            description = "delete user",
+            summary = "delete the user account",
+            responses = {
+                    @ApiResponse(
+                            description = "Success",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "Internal Server Error",
+                            responseCode = "401"
+                    )
+            }
+    )
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable("id") Integer id) {
@@ -188,6 +230,20 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User deleted successfully");
     }
 
+    @Operation(
+            description = "Get all user",
+            summary = "only admin should be able to access users info",
+            responses = {
+                    @ApiResponse(
+                            description = "Success",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "Unauthorized",
+                            responseCode = "403"
+                    )
+            }
+    )
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping
     public ResponseEntity<List<UserResponse>> findAllUser() {
@@ -195,6 +251,20 @@ public class UserController {
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
+    @Operation(
+            description = "Get by user",
+            summary = "Get user info or details by user id",
+            responses = {
+                    @ApiResponse(
+                            description = "Success",
+                            responseCode = "200"
+                    ),
+                    @ApiResponse(
+                            description = "Unauthorized",
+                            responseCode = "403"
+                    )
+            }
+    )
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> findByUserId(@PathVariable("userId") String userId) {
         UserResponse user = userService.findByUserId(userId);
