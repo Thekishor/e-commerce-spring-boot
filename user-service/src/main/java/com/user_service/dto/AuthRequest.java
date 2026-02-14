@@ -1,5 +1,6 @@
 package com.user_service.dto;
 
+import com.user_service.validation.ValidateUserEmail;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class AuthRequest {
 
     @NotBlank(message = "Email is required")
+    @ValidateUserEmail
     @Email(message = "Invalid email format")
     private String email;
 

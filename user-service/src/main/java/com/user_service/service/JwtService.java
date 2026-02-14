@@ -138,7 +138,8 @@ public class JwtService {
             throw new RuntimeException("ERROR: Invalid refresh token");
         }
 
-        final CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(username);
+        final CustomUserDetails userDetails =
+                (CustomUserDetails) userDetailsService.loadUserByUsername(username);
 
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(

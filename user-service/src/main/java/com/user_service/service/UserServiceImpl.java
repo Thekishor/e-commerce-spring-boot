@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -52,10 +51,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse createUser(UserRequest userRequest) {
         if (userRepository.existsByEmail(userRequest.getEmail())) {
-            log.error("User already exists with email:");
-            throw new UserAlreadyExistsException("User already found with email:" + userRequest.getEmail());
+            log.error("User already exists with email: {}", userRequest.getEmail());
+            throw new UserAlreadyExistsException("User already found with email");
         }
-        log.info("User Request: {}", userRequest);
+        log.info("User email {}", userRequest.getEmail());
         User user = mapUserRequestToUserEntity(userRequest);
         user.setUserId(UUID.randomUUID().toString().replace("-", ""));
         User savedUser = userRepository.save(user);
@@ -65,12 +64,16 @@ public class UserServiceImpl implements UserService {
                 .activationTokenExpiry(LocalDateTime.now().plusHours(1))
                 .build();
         VerificationToken savedToken = verificationTokenRepository.save(verificationToken);
+        log.info("User verification information: {}", savedToken);
         String verificationLink = backend_url + "/activate?token=" + savedToken.getActivationToken();
         try {
             emailService.sendEmailVerificationLink(savedUser.getEmail(), verificationLink, savedUser.getUsername());
+            log.info("Sending email verification link to user");
         } catch (Exception exception) {
+            log.error("Exception occurred while sending verification link to user: {}", exception.getMessage());
             throw new RuntimeException(exception.getMessage());
         }
+        log.debug("User registered successfully {}", savedUser);
         return mapUserEntityToUserResponse(savedUser);
     }
 
@@ -93,8 +96,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse findByUserId(String userId) {
+        log.info("User with Id {}", userId);
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id"));
+        log.debug("User find with id {}", user);
         return mapUserEntityToUserResponse(user);
     }
 

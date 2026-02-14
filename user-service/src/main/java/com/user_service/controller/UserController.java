@@ -23,6 +23,7 @@ import java.util.Map;
 @Slf4j
 public class UserController {
 
+    private static final String MESSAGE = "message";
     private final UserService userService;
 
     @Operation(
@@ -46,7 +47,7 @@ public class UserController {
         UserResponse userResponse = userService.createUser(userRequest);
         log.info("Current register user information: {} {}", userResponse, LocalDateTime.now());
         return new ResponseEntity<>(Map.of(
-                "message", "Please check your email to verify your account"
+                MESSAGE, "Please check your email to verify your account"
         ), HttpStatus.CREATED);
     }
 
@@ -86,7 +87,7 @@ public class UserController {
             if (!userService.isAccountActive(authRequest.getEmail())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of(
-                                "message", "User not found with email"
+                                MESSAGE, "User not found with email"
                         ));
             }
             Map<String, Object> response = userService.generateJwtToken(authRequest);
@@ -94,7 +95,7 @@ public class UserController {
         } catch (Exception exception) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
-                            "message", exception.getMessage()
+                            MESSAGE, exception.getMessage()
                     ));
         }
     }
@@ -149,22 +150,22 @@ public class UserController {
     ) {
         if (!userService.checkIfValidOldPassword(passwordModel.getOldPassword())) {
             return new ResponseEntity<>(Map.of(
-                    "message", "Invalid Old Password"
+                    MESSAGE, "Invalid Old Password"
             ), HttpStatus.BAD_REQUEST);
         }
         if (userService.passwordMatches(passwordModel.getNewPassword())) {
             return new ResponseEntity<>(Map.of(
-                    "message", "New password must be different from the previous password"
+                    MESSAGE, "New password must be different from the previous password"
             ), HttpStatus.CONFLICT);
         }
         if (!passwordModel.getNewPassword().equals(passwordModel.getConfirmPassword())) {
             return new ResponseEntity<>(Map.of(
-                    "message", "New Password and Confirm New Password do not match"
+                    MESSAGE, "New Password and Confirm New Password do not match"
             ), HttpStatus.BAD_REQUEST);
         }
         userService.changedPassword(passwordModel.getNewPassword());
         return new ResponseEntity<>(Map.of(
-                "message", "Password Change Successfully"
+                MESSAGE, "Password Change Successfully"
         ), HttpStatus.OK);
     }
 
@@ -188,7 +189,7 @@ public class UserController {
     ) {
         userService.generatePasswordResetToken(resetPasswordModel.getEmail());
         return new ResponseEntity<>(Map.of(
-                "message", "Password reset link sent to your email"
+                MESSAGE, "Password reset link sent to your email"
         ), HttpStatus.OK);
     }
 
@@ -201,11 +202,11 @@ public class UserController {
         boolean success = userService.validatePasswordResetToken(token, savePassword);
         if (success) {
             return new ResponseEntity<>(Map.of(
-                    "message", "Password Change Successfully"
+                    MESSAGE, "Password Change Successfully"
             ), HttpStatus.OK);
         }
         return new ResponseEntity<>(Map.of(
-                "message", "Reset Password link expired or invalid"
+                MESSAGE, "Reset Password link expired or invalid"
         ), HttpStatus.BAD_REQUEST);
     }
 

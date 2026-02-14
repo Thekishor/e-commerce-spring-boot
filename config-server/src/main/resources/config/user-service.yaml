@@ -28,8 +28,8 @@ eureka:
 mail:
   hostname: smtp-relay.brevo.com
   port: 587
-  username: ${MAIL_USERNAME:9487cf001@smtp-brevo.com}
-  password: ${MAIL_PASSWORD:8IhPqrEZsjA927wz}
+  username: 9487cf001@smtp-brevo.com
+  password: 8IhPqrEZsjA927wz
 user:
   email: kishorpandey981@gmail.com
 backend_url: http://localhost:9000/api/user
@@ -41,6 +41,7 @@ app:
     jwt:
       access-token-expiration: 1200000  #20 min
       refresh-token-expiration: 172800000   #2 days
+  disposable-email: 10minutemail,20minutemail,33mail,5ymail,anonbox,guerrillamail,mailinator,maildrop,mailnesia,moakt,my10minutemail,throwawaymail,trashmail,temp-mail,tempmail,truemail,yopmail
 jwt:
   secret:
     key: NkrN883XSrya6lg6DS+QQAM/kjJMKhxUDcRzr/CaOmtu804Z0qe/cV4KbYiyrQJltYJpA6bL/kPtq+C3/B1yJA==

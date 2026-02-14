@@ -158,4 +158,21 @@ public class ProductServiceImpl implements ProductService {
         Product savedProduct = productRepository.save(product);
         return mapProductEntityToProductResponse(savedProduct);
     }
+
+    @Override
+    public Map<String, List<ProductResponse>> getProductByTypes() {
+
+        try {
+            log.info("ProductServiceImpl:getProductByTypes execution started.");
+
+            return productRepository.findAll().stream()
+                    .map(this::mapProductEntityToProductResponse)
+                    .filter(product -> product.getCategoryName() != null)
+                    .collect(Collectors.groupingBy(ProductResponse::getCategoryName));
+
+        } catch (Exception exception) {
+            log.error("Exception occurred while retrieving product grouping by type from database, Exception message {}", exception.getMessage());
+            throw new ResourceNotFoundException("Exception occurred while fetching product from database");
+        }
+    }
 }

@@ -22,4 +22,6 @@ public interface ProductService {
     void deleteProduct(Integer id);
 
     ProductResponse updateProduct(Integer id, ProductRequest productRequest);
+
+    Map<String, List<ProductResponse>> getProductByTypes();
 }

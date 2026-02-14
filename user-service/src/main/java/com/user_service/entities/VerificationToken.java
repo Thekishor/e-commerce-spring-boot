@@ -25,6 +25,10 @@ public class VerificationToken {
     private LocalDateTime activationTokenExpiry;
 
     @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "USER_VERIFY_TOKEN"))
+    @JoinColumn(
+            name = "user_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "USER_VERIFY_TOKEN")
+    )
     private User user;
 }

@@ -1,5 +1,6 @@
 package com.user_service.dto;
 
+import com.user_service.validation.ValidateUserEmail;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -20,6 +21,7 @@ public class UserRequest {
     private String username;
 
     @Email(message = "Enter a valid email address")
+    @ValidateUserEmail
     @NotBlank(message = "Email cannot be blank")
     private String email;
 
