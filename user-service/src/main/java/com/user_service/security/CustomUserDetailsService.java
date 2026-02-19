@@ -1,7 +1,6 @@
 package com.user_service.security;
 
 import com.user_service.entities.User;
-import com.user_service.exception.UserNotFoundException;
 import com.user_service.repository.UserRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

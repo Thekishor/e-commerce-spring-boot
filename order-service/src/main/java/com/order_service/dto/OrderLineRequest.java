@@ -1,6 +1,6 @@
 package com.order_service.dto;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
 
@@ -11,12 +11,13 @@ import lombok.*;
 @Builder
 public class OrderLineRequest {
 
-    @NotNull(message = "Order ID Required")
+    @NotBlank(message = "Order ID Required")
     private Integer orderId;
 
-    @NotNull(message = "Product Id Required")
+    @NotBlank(message = "Product Id Required")
     private Integer productId;
 
+    @NotBlank(message = "Quantity required")
     @Positive(message = "Quantity should be greater than 0")
     private Integer quantity;
 }

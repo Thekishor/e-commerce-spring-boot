@@ -3,7 +3,8 @@ package com.product_service.service;
 import com.product_service.dto.CategoryRequest;
 import com.product_service.dto.CategoryResponse;
 import com.product_service.entities.Category;
-import com.product_service.exception.ResourceNotFoundException;
+import com.product_service.exception.BusinessException;
+import com.product_service.exception.ErrorCode;
 import com.product_service.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse createCategory(CategoryRequest categoryRequest, String userId) {
         if (categoryRepository.existsByName(categoryRequest.getName())) {
             log.error("Category name already exists");
-            throw new ResourceNotFoundException("Category name already exists:" + categoryRequest.getName());
+            throw new BusinessException(ErrorCode.CATEGORY_ALREADY_FOUND);
         }
         Category category = mapCategoryRequestToCategoryEntity(categoryRequest);
         category.setUserId(userId);
@@ -54,21 +55,21 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryResponse getCategoryById(Integer id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
         return mapCategoryEntityToCategoryResponse(category);
     }
 
     @Override
     public void deleteCategory(Integer id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
         categoryRepository.delete(category);
     }
 
     @Override
     public CategoryResponse updateCategory(Integer id, CategoryRequest categoryRequest) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
         category.setName(categoryRequest.getName());
         category.setDescription(categoryRequest.getDescription());
         return mapCategoryEntityToCategoryResponse(categoryRepository.save(category));

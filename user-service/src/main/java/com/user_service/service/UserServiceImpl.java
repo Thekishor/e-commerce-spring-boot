@@ -3,11 +3,9 @@ package com.user_service.service;
 import com.user_service.dto.*;
 import com.user_service.entities.PasswordResetToken;
 import com.user_service.entities.User;
+import com.user_service.entities.UserMapper;
 import com.user_service.entities.VerificationToken;
-import com.user_service.exception.BadCredentialsException;
-import com.user_service.exception.PasswordConflictException;
-import com.user_service.exception.UserAlreadyExistsException;
-import com.user_service.exception.UserNotFoundException;
+import com.user_service.exception.*;
 import com.user_service.repository.JwtTokenRepository;
 import com.user_service.repository.PasswordResetTokenRepository;
 import com.user_service.repository.UserRepository;
@@ -36,7 +34,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     @Value("${backend_url}")
-    private String backend_url;
+    private String url;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -52,12 +50,19 @@ public class UserServiceImpl implements UserService {
     public UserResponse createUser(UserRequest userRequest) {
         if (userRepository.existsByEmail(userRequest.getEmail())) {
             log.error("User already exists with email: {}", userRequest.getEmail());
-            throw new UserAlreadyExistsException("User already found with email");
+            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
         log.info("User email {}", userRequest.getEmail());
-        User user = mapUserRequestToUserEntity(userRequest);
+        User user = UserMapper.mapUserRequestToUserEntity(userRequest);
         user.setUserId(UUID.randomUUID().toString().replace("-", ""));
+        user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
         User savedUser = userRepository.save(user);
+        log.info("User registered successfully {}", savedUser);
+        saveVerificationToken(savedUser);
+        return UserMapper.mapUserEntityToUserResponse(savedUser);
+    }
+
+    private void saveVerificationToken(User savedUser) {
         VerificationToken verificationToken = VerificationToken.builder()
                 .user(savedUser)
                 .activationToken(UUID.randomUUID().toString())
@@ -65,55 +70,40 @@ public class UserServiceImpl implements UserService {
                 .build();
         VerificationToken savedToken = verificationTokenRepository.save(verificationToken);
         log.info("User verification information: {}", savedToken);
-        String verificationLink = backend_url + "/activate?token=" + savedToken.getActivationToken();
+        sendVerificationLink(savedToken, savedUser);
+    }
+
+    private void sendVerificationLink(VerificationToken savedToken, User savedUser) {
+        String verificationLink = url + "/activate?token=" + savedToken.getActivationToken();
         try {
             emailService.sendEmailVerificationLink(savedUser.getEmail(), verificationLink, savedUser.getUsername());
             log.info("Sending email verification link to user");
         } catch (Exception exception) {
             log.error("Exception occurred while sending verification link to user: {}", exception.getMessage());
-            throw new RuntimeException(exception.getMessage());
+            throw new BusinessException(ErrorCode.INTERNAL_EXCEPTION);
         }
-        log.debug("User registered successfully {}", savedUser);
-        return mapUserEntityToUserResponse(savedUser);
-    }
-
-    private UserResponse mapUserEntityToUserResponse(User savedUser) {
-        return UserResponse.builder()
-                .username(savedUser.getUsername())
-                .isActive(savedUser.getIsActive())
-                .email(savedUser.getEmail())
-                .role(savedUser.getRole())
-                .build();
-    }
-
-    private User mapUserRequestToUserEntity(UserRequest userRequest) {
-        return User.builder()
-                .username(userRequest.getUsername())
-                .email(userRequest.getEmail())
-                .password(passwordEncoder.encode(userRequest.getPassword()))
-                .build();
     }
 
     @Override
     public UserResponse findByUserId(String userId) {
         log.info("User with Id {}", userId);
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId));
         log.debug("User find with id {}", user);
-        return mapUserEntityToUserResponse(user);
+        return UserMapper.mapUserEntityToUserResponse(user);
     }
 
     @Override
     public List<UserResponse> findAllUsers() {
         List<User> users = userRepository.findAll();
-        return users.stream().map(this::mapUserEntityToUserResponse).toList();
+        return users.stream().map(UserMapper::mapUserEntityToUserResponse).toList();
     }
 
     @Transactional
     @Override
     public void deleteUser(Integer id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, id));
         userRepository.delete(user);
     }
 
@@ -121,11 +111,12 @@ public class UserServiceImpl implements UserService {
     public boolean activatedProfile(String token) {
         if (token == null || token.isEmpty()) {
             log.warn("Activation token should not be null or empty");
-            throw new RuntimeException("Activation token should not be null or empty");
+            throw new BusinessException(ErrorCode.ACTIVATION_TOKEN);
         }
-        VerificationToken verificationToken = verificationTokenRepository.findByActivationToken(token);
+        VerificationToken verificationToken =
+                verificationTokenRepository.findByActivationToken(token);
         User user = userRepository.findById(verificationToken.getUser().getId())
-                .orElseThrow(() -> new UserNotFoundException("User not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         if (verificationToken.getActivationTokenExpiry().isAfter(LocalDateTime.now())) {
             user.setIsActive(true);
             user.setEmailVerified(true);
@@ -150,7 +141,7 @@ public class UserServiceImpl implements UserService {
 
         if (loginAttemptService.isBlocked(authRequest.getEmail())) {
             log.error("User have been temporarily locked due to too many login attempts: {}", authRequest.getEmail());
-            throw new BadCredentialsException("You have been temporarily locked due to too many failed login attempts.");
+            throw new BusinessException(ErrorCode.LOGIN_ATTEMPT);
         }
 
         try {
@@ -170,14 +161,16 @@ public class UserServiceImpl implements UserService {
 
             if (userDetails == null) {
                 log.info("User not found with email: {}", authRequest.getEmail());
-                throw new RuntimeException("Authentication failed");
+                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
 
             loginAttemptService.loginSucceeded(userDetails.getUsername());
             log.info("Login successful: {}", userDetails.getUsername());
 
-            final String accessToken = jwtservice.generateAccessToken(userDetails.getUsername(), userDetails);
-            final String refreshToken = jwtservice.generateRefreshToken(userDetails.getUsername());
+            final String accessToken =
+                    jwtservice.generateAccessToken(userDetails.getUsername(), userDetails);
+            final String refreshToken =
+                    jwtservice.generateRefreshToken(userDetails.getUsername());
 
             //store tokens inside redis
             jwtTokenRepository.storeToken(
@@ -195,7 +188,7 @@ public class UserServiceImpl implements UserService {
         } catch (Exception exception) {
             loginAttemptService.loginFailed(authRequest.getEmail());
             log.info("Invalid username or password. {}", authRequest.getEmail());
-            throw new BadCredentialsException("Invalid username or password");
+            throw new BusinessException(ErrorCode.BAD_CREDENTIALS);
         }
     }
 
@@ -206,8 +199,8 @@ public class UserServiceImpl implements UserService {
                 SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null) {
-            log.warn("User not found with email");
-            throw new RuntimeException("Authentication failed");
+            log.error(String.valueOf(ErrorCode.USER_NOT_FOUND));
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 
         //Remove all tokens for this user
@@ -246,7 +239,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void generatePasswordResetToken(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         PasswordResetToken passwordResetToken = PasswordResetToken
                 .builder().user(user)
                 .token(UUID.randomUUID().toString())
@@ -254,11 +247,12 @@ public class UserServiceImpl implements UserService {
                 .build();
         PasswordResetToken savedPasswordResetToken =
                 passwordResetTokenRepository.save(passwordResetToken);
-        String passwordResetLink = backend_url + "/savePassword?token=" + savedPasswordResetToken.getToken();
+        String passwordResetLink = 
+                url + "/savePassword?token=" + savedPasswordResetToken.getToken();
         try {
             emailService.sendPasswordResetLink(user.getEmail(), passwordResetLink, user.getUsername());
         } catch (Exception exception) {
-            throw new RuntimeException(exception.getMessage());
+            throw new BusinessException(ErrorCode.INTERNAL_EXCEPTION);
         }
     }
 
@@ -266,15 +260,15 @@ public class UserServiceImpl implements UserService {
     public boolean validatePasswordResetToken(String token, SavePassword savePassword) {
         if (token == null || token.isEmpty()) {
             log.warn("Password Reset token should not be null or empty");
-            throw new RuntimeException("Password Reset token should not be null or empty");
+            throw new BusinessException(ErrorCode.PASSWORD_RESET_TOKEN);
         }
         PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(token);
         User user = userRepository.findById(passwordResetToken.getUser().getId())
-                .orElseThrow(() -> new UserNotFoundException("User not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (passwordResetToken.getTokenExpiry().isAfter(LocalDateTime.now())) {
             if (!savePassword.getNewPassword().equals(savePassword.getConfirmPassword())) {
-                throw new PasswordConflictException("New password and confirm password do not match");
+                throw new BusinessException(ErrorCode.MISMATCH_PASSWORD);
             }
             user.setPassword(passwordEncoder.encode(savePassword.getNewPassword()));
             userRepository.save(user);
@@ -288,6 +282,6 @@ public class UserServiceImpl implements UserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         assert authentication != null;
         return userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new UserNotFoundException("User not found with email"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 }

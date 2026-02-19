@@ -6,9 +6,9 @@ spring:
       host: localhost
       port: 6379
   datasource:
-    url: jdbc:postgresql://localhost:5432/user_db
-    username: postgres
-    password: kishor@2233#
+    url: jdbc:postgresql://localhost:5743/${USER_SERVICE_DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -26,13 +26,13 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka
 mail:
-  hostname: smtp-relay.brevo.com
-  port: 587
-  username: 9487cf001@smtp-brevo.com
-  password: 8IhPqrEZsjA927wz
+  hostname: ${MAIL_HOSTNAME}
+  port: ${MAIL_PORT}
+  username: ${MAIL_USERNAME}
+  password: ${MAIL_PASSWORD}
 user:
-  email: kishorpandey981@gmail.com
-backend_url: http://localhost:9000/api/user
+  email: ${USER_EMAIL}
+backend_url: ${USER_SERVICE_BACKEND_URL}
 kafka:
   topic:
     name: order-event

@@ -35,7 +35,7 @@ public class OrderController {
     ) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             try {
-                OrderResponse orderResponse = orderService.createOrder(orderRequest, authHeader, userId);
+                orderService.createOrder(orderRequest, authHeader, userId);
                 return new ResponseEntity<>(Map.of(
                         "message", "Order created successfully"
                 ), HttpStatus.CREATED);

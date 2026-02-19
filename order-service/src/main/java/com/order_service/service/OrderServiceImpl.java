@@ -3,25 +3,29 @@ package com.order_service.service;
 import com.order_service.dto.*;
 import com.order_service.entities.Order;
 import com.order_service.exception.ResourceNotFoundException;
-import com.order_service.openFeign.ProductClient;
-import com.order_service.openFeign.UserClient;
+import com.order_service.feign.ProductClient;
+import com.order_service.feign.UserClient;
 import com.order_service.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import common.events.kafkaEvents.OrderEvent;
 import common.events.kafkaEvents.PurchaseResponse;
-
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class OrderServiceImpl implements OrderService {
+
+    @Value("${alphanumeric.value}")
+    private final String alphanumeric;
+
+    private static final SecureRandom random = new SecureRandom();
 
     private final OrderRepository orderRepository;
     private final UserClient userClient;
@@ -30,7 +34,7 @@ public class OrderServiceImpl implements OrderService {
     private final KafkaMessageProducer kafkaMessageProducer;
 
     @Override
-    public OrderResponse createOrder(OrderRequest orderRequest, String authHeader, String userId) {
+    public void createOrder(OrderRequest orderRequest, String authHeader, String userId) {
 
         UserResponse userResponse = userClient.findByUserId(userId, authHeader);
         if (userResponse == null) {
@@ -68,8 +72,6 @@ public class OrderServiceImpl implements OrderService {
 
         //creating order event for notification
         kafkaMessageProducer.sendOrderEventMessage(orderEvent);
-
-        return mapOrderEntityToOrderResponse(savedOrder);
     }
 
     private OrderResponse mapOrderEntityToOrderResponse(Order savedOrder) {
@@ -92,16 +94,13 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private String generateOrderNumber() {
-        String alphanumeric = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        SecureRandom random = new SecureRandom();
-
         //Prefix + date part
         String orderPrefix = "ORD-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
         StringBuilder randomPart = new StringBuilder();
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 10; i++) {
             randomPart.append(alphanumeric.charAt(random.nextInt(alphanumeric.length())));
         }
-        return orderPrefix + "-" + randomPart.toString();
+        return orderPrefix + "-" + randomPart;
     }
 
     @Override

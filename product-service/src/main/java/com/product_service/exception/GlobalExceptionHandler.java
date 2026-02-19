@@ -1,5 +1,6 @@
 package com.product_service.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -11,13 +12,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, String>> resourceNotFoundException(ResourceNotFoundException exception) {
-        return new ResponseEntity<>(Map.of(
-                "message", exception.getMessage()
-        ), HttpStatus.NOT_FOUND);
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> businessException(BusinessException exception) {
+
+        final ErrorResponse errorResponse = ErrorResponse.builder()
+                .code(exception.getErrorCode().getCode())
+                .message(exception.getMessage())
+                .build();
+        log.info("Business exception: {}", exception.getMessage());
+        log.debug(exception.getMessage(), exception);
+
+        return ResponseEntity.status(exception.getErrorCode().getStatus() != null ?
+                exception.getErrorCode().getStatus() :
+                HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

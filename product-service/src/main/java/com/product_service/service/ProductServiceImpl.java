@@ -6,7 +6,8 @@ import com.product_service.dto.PurchaseRequest;
 import com.product_service.dto.PurchaseResponse;
 import com.product_service.entities.Category;
 import com.product_service.entities.Product;
-import com.product_service.exception.ResourceNotFoundException;
+import com.product_service.exception.BusinessException;
+import com.product_service.exception.ErrorCode;
 import com.product_service.repository.CategoryRepository;
 import com.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse createProduct(ProductRequest productRequest, String userId) {
         if (!categoryRepository.existsById(productRequest.getCategoryId())) {
             log.error("Category not found with id");
-            throw new ResourceNotFoundException("Category not found with id");
+            throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
         }
         Product product = mapProductRequestToProductEntity(productRequest);
         product.setUserId(userId);
@@ -53,7 +54,7 @@ public class ProductServiceImpl implements ProductService {
         var availableProduct = productRepository.findAllByIdInOrderById(productId);
 
         if (productId.size() != availableProduct.size()) {
-            throw new ResourceNotFoundException("One or More products does not exists");
+            throw new BusinessException(ErrorCode.MORE_PRODUCT_NOT_FOUND);
         }
 
         var sortedProductRequest =
@@ -66,7 +67,7 @@ public class ProductServiceImpl implements ProductService {
             var productRequest = sortedProductRequest.get(i);
 
             if (product.getQuantity() < productRequest.getQuantity()) {
-                throw new ResourceNotFoundException("Insufficient stock " + "quantity for product with Id: " + productRequest.getProductId());
+                throw new BusinessException(ErrorCode.INSUFFICIENT_STOCK);
             }
             var newQuantity = product.getQuantity() - productRequest.getQuantity();
             product.setQuantity(newQuantity);
@@ -102,7 +103,7 @@ public class ProductServiceImpl implements ProductService {
 
     private Product mapProductRequestToProductEntity(ProductRequest productRequest) {
         Category category = categoryRepository.findById(productRequest.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
         return Product.builder()
                 .name(productRequest.getName())
                 .description(productRequest.getDescription())
@@ -116,14 +117,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponse getProductByID(Integer id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         return mapProductEntityToProductResponse(product);
     }
 
     @Cacheable(value = "PRODUCT_CACHE")
     @Override
     public Map<String, List<ProductResponse>> getAllProduct(Pageable pageable, String search) {
-        List<Product> products = List.of();
+        List<Product> products;
         if (search == null) {
             products = productRepository.findAll(pageable).getContent();
         } else {
@@ -138,7 +139,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void deleteProduct(Integer id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         productRepository.delete(product);
     }
 
@@ -146,10 +147,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponse updateProduct(Integer id, ProductRequest productRequest) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         if (!categoryRepository.existsById(productRequest.getCategoryId())) {
             log.error("Category not found");
-            throw new ResourceNotFoundException("Category not found with id");
+            throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
         }
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
@@ -172,7 +173,7 @@ public class ProductServiceImpl implements ProductService {
 
         } catch (Exception exception) {
             log.error("Exception occurred while retrieving product grouping by type from database, Exception message {}", exception.getMessage());
-            throw new ResourceNotFoundException("Exception occurred while fetching product from database");
+            throw new BusinessException(ErrorCode.INTERNAL_EXCEPTION);
         }
     }
 }

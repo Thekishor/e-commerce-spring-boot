@@ -1,4 +1,4 @@
-package com.order_service.openFeign;
+package com.order_service.feign;
 
 import com.order_service.dto.UserResponse;
 import org.springframework.cloud.openfeign.FeignClient;

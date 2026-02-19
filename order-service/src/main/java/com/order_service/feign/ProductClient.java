@@ -1,4 +1,4 @@
-package com.order_service.openFeign;
+package com.order_service.feign;
 
 import com.order_service.dto.PurchaseRequest;
 import jakarta.validation.Valid;

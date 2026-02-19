@@ -18,7 +18,8 @@ public class KafkaMessageProducer {
 
     public void sendOrderEventMessage(OrderEvent orderEvent) {
         try {
-            CompletableFuture<SendResult<String, Object>> future = kafkaTemplate.send("order-event", orderEvent);
+            CompletableFuture<SendResult<String, Object>> future =
+                    kafkaTemplate.send("order-event", orderEvent);
             future.whenComplete((result, exception) -> {
                 if (exception == null) {
                     log.info("Send message with offset {} {}: ", orderEvent, result.getRecordMetadata().offset());
