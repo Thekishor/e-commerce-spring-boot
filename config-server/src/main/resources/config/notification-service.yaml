@@ -2,9 +2,9 @@ server:
   port: 9005
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_URL}:${DB_PORT}/${NOTIFICATION_SERVICE_DB_NAME}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:postgresql://localhost:5432/notification_db
+    username: postgres
+    password: kishor@2233#
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -22,9 +22,9 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka
 mail:
-  hostname: ${MAIL_HOSTNAME}
-  port: ${MAIL_PORT}
-  username: ${MAIL_USERNAME}
-  password: ${MAIL_PASSWORD}
+  hostname: smtp-relay.brevo.com
+  port: 587
+  username: 9487cf001@smtp-brevo.com
+  password: 8IhPqrEZsjA927wz
 user:
-  email: ${USER_EMAIL}
+  email: kishorpandey981@gmail.com

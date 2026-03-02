@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class UserRequest {
+public class  UserRequest {
 
     @NotBlank(message = "UserName cannot be blank")
     @Size(min = 3, max = 50, message = "UserName must be between 2 and 50 characters")

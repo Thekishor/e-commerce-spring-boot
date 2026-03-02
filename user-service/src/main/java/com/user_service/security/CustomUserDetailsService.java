@@ -1,6 +1,8 @@
 package com.user_service.security;
 
 import com.user_service.entities.User;
+import com.user_service.exception.BusinessException;
+import com.user_service.exception.ErrorCode;
 import com.user_service.repository.UserRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         return new CustomUserDetails(
                 user.getUserId(),

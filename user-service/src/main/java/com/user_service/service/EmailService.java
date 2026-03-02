@@ -19,7 +19,7 @@ public class EmailService {
     @Value("${user.email}")
     private String email;
 
-    public void sendEmailVerificationLink(String toEmail, String verificationLink, String username) throws MessagingException {
+    public void sendEmailVerificationLink(String toEmail, String verificationLink, String username) {
         String content = "<p>Dear " + username + ",</p>"
                 + "<p> Thank you for registering.</p>"
                 + "<p>Please confirm your email address by clicking the button below:</p>"

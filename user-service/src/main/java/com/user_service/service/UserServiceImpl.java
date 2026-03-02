@@ -3,9 +3,9 @@ package com.user_service.service;
 import com.user_service.dto.*;
 import com.user_service.entities.PasswordResetToken;
 import com.user_service.entities.User;
-import com.user_service.entities.UserMapper;
 import com.user_service.entities.VerificationToken;
 import com.user_service.exception.*;
+import com.user_service.mapper.UserMapper;
 import com.user_service.repository.JwtTokenRepository;
 import com.user_service.repository.PasswordResetTokenRepository;
 import com.user_service.repository.UserRepository;
@@ -38,6 +38,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
     private final VerificationTokenRepository verificationTokenRepository;
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
@@ -53,13 +54,14 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
         log.info("User email {}", userRequest.getEmail());
-        User user = UserMapper.mapUserRequestToUserEntity(userRequest);
-        user.setUserId(UUID.randomUUID().toString().replace("-", ""));
-        user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+        User user = userMapper.mapUserRequestToUserEntity(userRequest);
+        user.setUserId(UUID.randomUUID().toString());
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        log.info("Mapped user information: {}", user);
         User savedUser = userRepository.save(user);
         log.info("User registered successfully {}", savedUser);
         saveVerificationToken(savedUser);
-        return UserMapper.mapUserEntityToUserResponse(savedUser);
+        return userMapper.mapUserEntityToUserResponse(savedUser);
     }
 
     private void saveVerificationToken(User savedUser) {
@@ -90,13 +92,13 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId));
         log.debug("User find with id {}", user);
-        return UserMapper.mapUserEntityToUserResponse(user);
+        return userMapper.mapUserEntityToUserResponse(user);
     }
 
     @Override
     public List<UserResponse> findAllUsers() {
         List<User> users = userRepository.findAll();
-        return users.stream().map(UserMapper::mapUserEntityToUserResponse).toList();
+        return users.stream().map(userMapper::mapUserEntityToUserResponse).toList();
     }
 
     @Transactional
@@ -247,7 +249,7 @@ public class UserServiceImpl implements UserService {
                 .build();
         PasswordResetToken savedPasswordResetToken =
                 passwordResetTokenRepository.save(passwordResetToken);
-        String passwordResetLink = 
+        String passwordResetLink =
                 url + "/savePassword?token=" + savedPasswordResetToken.getToken();
         try {
             emailService.sendPasswordResetLink(user.getEmail(), passwordResetLink, user.getUsername());
