@@ -24,6 +24,7 @@
 - User login attempts limit with redis 
 - JWT access token are short-lived, while refresh token are stored securely and rotated
 - Swagger Api for documentation
+- Spring Jpa Auditing with Base Entity
 
 ### 2. Product Service
 - localhost:9001/api/product/**
@@ -57,8 +58,20 @@
 - Central entry point for all client request
 - Validates JWT before routing
 - Forwards authorized requests to internal services
-- For example:
-     http://localhost:9002/api/user/login 
+
+- ** API Examples (Register & login)**:
+  ```json
+  // User Registration: POST http://localhost:9002/api/user/register
+  {
+    "username": "Kishor Pandey",
+    "email": "kishorpandey981@gmail.com",
+    "password": "kishor@@##4426"
+  } 
+  // User Login: POST http://localhost:9002/api/user/login
+  {
+    "username": "kishorpandey981@gmail.com",
+    "password": "kishor@@##4426"
+  }
 - Load balancing
 
 ### 8. Security Design
