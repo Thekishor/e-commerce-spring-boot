@@ -1,7 +1,9 @@
 package com.user_service.entities;
 
+import com.user_service.auditing.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -15,14 +17,9 @@ import java.util.List;
 @Builder
 @Getter
 @Setter
-public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-
-    @Column(nullable = false, updatable = false, unique = true)
-    private String userId;
+@SuperBuilder
+@ToString(callSuper = true)
+public class User extends BaseEntity {
 
     private String username;
 
