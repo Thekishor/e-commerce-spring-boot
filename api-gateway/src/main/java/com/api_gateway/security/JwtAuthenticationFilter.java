@@ -52,6 +52,7 @@ public class JwtAuthenticationFilter implements WebFilter {
                                 null,
                                 userResponse.getRole().stream().map(SimpleGrantedAuthority::new).toList()
                         );
+                authenticationToken.setDetails(exchange);
                 SecurityContext context = new SecurityContextImpl(authenticationToken);
 
                 //set the principal header in the request

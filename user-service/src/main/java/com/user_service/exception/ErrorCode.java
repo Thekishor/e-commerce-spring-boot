@@ -15,7 +15,10 @@ public enum ErrorCode {
     INTERNAL_EXCEPTION("INTERNAL_EXCEPTION", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
     ACTIVATION_TOKEN("ACTIVATION_TOKEN", "Activation token should not be null or empty", HttpStatus.BAD_REQUEST),
     LOGIN_ATTEMPT("LOGIN_ATTEMPT", "You have been temporarily locked due to too many failed login attempts", HttpStatus.CONFLICT),
-    PASSWORD_RESET_TOKEN("PASSWORD_RESET_TOKEN", "Password Reset token should not be null or empty", HttpStatus.BAD_REQUEST);
+    PASSWORD_RESET_TOKEN("PASSWORD_RESET_TOKEN", "Password Reset token should not be null or empty", HttpStatus.BAD_REQUEST),
+    INVALID_TOKEN("INVALID_TOKEN", "Invalid token type", HttpStatus.BAD_REQUEST),
+    TOKEN_EXPIRED("TOKEN_EXPIRED", "token expired", HttpStatus.UNAUTHORIZED),
+    BLACKLIST_TOKEN("BLACKLIST_TOKEN", "token is blacklisted", HttpStatus.BAD_REQUEST);
 
     private final String code;
     private final String defaultMessage;

@@ -1,5 +1,7 @@
 package com.user_service.service;
 
+import com.user_service.exception.BusinessException;
+import com.user_service.exception.ErrorCode;
 import com.user_service.repository.JwtTokenRepository;
 import com.user_service.security.CustomUserDetails;
 import com.user_service.security.CustomUserDetailsService;
@@ -10,7 +12,6 @@ import io.jsonwebtoken.security.SignatureException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -117,16 +118,16 @@ public class JwtService {
     public String refreshAccessToken(final String refreshToken) {
         final Claims claims = extractClaims(refreshToken);
         if (!"REFRESH_TOKEN".equals(claims.get(TOKEN_TYPE))) {
-            throw new RuntimeException("Invalid token type");
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
         if (isTokenExpired(refreshToken)) {
-            throw new RuntimeException("Refresh token expired");
+            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
         }
 
         //check if the refresh token is blacklisted or not
         if (jwtTokenRepository.isRefreshTokenBlockListed(refreshToken)) {
-            throw new RuntimeException("ERROR: Refresh token is blacklisted");
+            throw new BusinessException(ErrorCode.BLACKLIST_TOKEN);
         }
 
         String username = extractUsername(refreshToken);
@@ -135,18 +136,12 @@ public class JwtService {
         String storedRefreshToken = jwtTokenRepository.getRefreshToken(username);
 
         if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
-            throw new RuntimeException("ERROR: Invalid refresh token");
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
         final CustomUserDetails userDetails =
                 (CustomUserDetails) userDetailsService.loadUserByUsername(username);
 
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
         String accessToken = generateAccessToken(claims.getSubject(), userDetails);
 
         //update access token in redis db

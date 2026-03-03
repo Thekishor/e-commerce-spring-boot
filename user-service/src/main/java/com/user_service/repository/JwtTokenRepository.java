@@ -15,11 +15,9 @@ public class JwtTokenRepository {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
-    //key prefixes for token storage
     private static final String ACCESS_TOKEN_KEY_PREFIX = "user:access:";
     private static final String REFRESH_TOKEN_KEY_PREFIX = "user:refresh:";
 
-    //key prefixes for token blacklisting
     private static final String ACCESS_BLACKLIST_PREFIX = "blacklist:access:";
     private static final String REFRESH_BLACKLIST_PREFIX = "blacklist:refresh:";
 
@@ -34,11 +32,9 @@ public class JwtTokenRepository {
             String accessToken,
             String refreshToken
     ) {
-        //store access token
         String accessKey = ACCESS_TOKEN_KEY_PREFIX + username;
         storeToken(accessKey, accessToken, accessTokenExpirationTime);
 
-        //store refresh token
         String refreshKey = REFRESH_TOKEN_KEY_PREFIX + username;
         storeToken(refreshKey, refreshToken, refreshTokenExpirationTime);
     }
@@ -51,17 +47,11 @@ public class JwtTokenRepository {
         redisTemplate.opsForValue().set(key, token, expiration, TimeUnit.MILLISECONDS);
     }
 
-    /*
-     * Retrieve the access token for a user
-     */
     public String getAccessToken(String username) {
         String accessKey = ACCESS_TOKEN_KEY_PREFIX + username;
         return getToken(accessKey);
     }
 
-    /*
-     * Retrieve the refresh token for a user
-     */
     public String getRefreshToken(String username) {
         String refreshKey = REFRESH_TOKEN_KEY_PREFIX + username;
         return getToken(refreshKey);
@@ -73,9 +63,6 @@ public class JwtTokenRepository {
         return mapper.convertValue(object, String.class);
     }
 
-    /*
-     * Remove all tokens for a user (complete logout)
-     */
     public void removeAllTokens(String username) {
         String accessToken = getAccessToken(username);
         String refreshToken = getRefreshToken(username);

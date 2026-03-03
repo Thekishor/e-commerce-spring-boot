@@ -15,7 +15,12 @@ public class CustomUserDetails implements UserDetails {
     private final String password;
     private final List<String> roles;
 
-    public CustomUserDetails(String userId, String email, String password, List<String> roles) {
+    public CustomUserDetails(
+            String userId,
+            String email,
+            String password,
+            List<String> roles
+    ) {
         this.email = email;
         this.password = password;
         this.roles = roles;
