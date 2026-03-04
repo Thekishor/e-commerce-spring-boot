@@ -14,7 +14,6 @@ import java.util.List;
 @Table(name = "user_db")
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 @Getter
 @Setter
 @SuperBuilder

@@ -19,7 +19,7 @@ public class ApplicationAuditAware implements AuditorAware<String> {
                 !authentication.isAuthenticated() ||
                 authentication instanceof AnonymousAuthenticationToken
         ) {
-            return Optional.empty();
+            return Optional.of("SELF");
         }
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         return Optional.ofNullable(Objects.requireNonNull(userDetails).getUserId());
