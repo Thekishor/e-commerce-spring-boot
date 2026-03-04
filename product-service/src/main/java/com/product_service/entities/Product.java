@@ -1,7 +1,9 @@
 package com.product_service.entities;
 
+import com.product_service.auditing.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "product_db")
@@ -9,12 +11,9 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class Product {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+@SuperBuilder
+@ToString(callSuper = true)
+public class Product extends BaseEntity {
 
     private String name;
 
