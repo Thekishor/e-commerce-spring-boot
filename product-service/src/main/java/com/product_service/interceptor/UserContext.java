@@ -1,22 +1,31 @@
 package com.product_service.interceptor;
 
+import com.product_service.dto.UserInfo;
+
 public class UserContext {
 
     private UserContext() {
-        /* This utility class should not be instantiated */
     }
 
-    private static final ThreadLocal<String> userHolder = new ThreadLocal<>();
+    private static final ThreadLocal<UserInfo> userInfo = new ThreadLocal<>();
 
-    public static void setUserId(String userId) {
-        userHolder.set(userId);
+    public static void setUserInfo(UserInfo userInfo) {
+        UserContext.userInfo.set(userInfo);
     }
 
     public static String getUserId() {
-        return userHolder.get();
+        return userInfo.get().userId();
+    }
+
+    public static String getUserEmail() {
+        return userInfo.get().email();
+    }
+
+    public static String getUserRole() {
+        return userInfo.get().roles();
     }
 
     public static void clear() {
-        userHolder.remove();
+        userInfo.remove();
     }
 }

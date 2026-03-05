@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface CategoryService {
 
-    CategoryResponse createCategory(CategoryRequest categoryRequest, String userId);
+    CategoryResponse createCategory(CategoryRequest categoryRequest);
 
     List<CategoryResponse> getAllCategory();
 
@@ -15,5 +15,5 @@ public interface CategoryService {
 
     void deleteCategory(Integer id);
 
-    CategoryResponse updateCategory(Integer id, CategoryRequest categoryRequest);
+    boolean updateCategory(Integer id, CategoryRequest categoryRequest);
 }

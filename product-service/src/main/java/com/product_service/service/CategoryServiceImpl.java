@@ -5,6 +5,7 @@ import com.product_service.dto.CategoryResponse;
 import com.product_service.entities.Category;
 import com.product_service.exception.BusinessException;
 import com.product_service.exception.ErrorCode;
+import com.product_service.interceptor.UserContext;
 import com.product_service.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,13 +21,13 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
 
     @Override
-    public CategoryResponse createCategory(CategoryRequest categoryRequest, String userId) {
+    public CategoryResponse createCategory(CategoryRequest categoryRequest) {
         if (categoryRepository.existsByName(categoryRequest.getName())) {
             log.error("Category name already exists");
             throw new BusinessException(ErrorCode.CATEGORY_ALREADY_FOUND);
         }
         Category category = mapCategoryRequestToCategoryEntity(categoryRequest);
-        category.setUserId(userId);
+        category.setUserId(UserContext.getUserId());
         Category savedCategory = categoryRepository.save(category);
         return mapCategoryEntityToCategoryResponse(savedCategory);
     }
@@ -67,11 +68,12 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryResponse updateCategory(Integer id, CategoryRequest categoryRequest) {
+    public boolean updateCategory(Integer id, CategoryRequest categoryRequest) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
         category.setName(categoryRequest.getName());
         category.setDescription(categoryRequest.getDescription());
-        return mapCategoryEntityToCategoryResponse(categoryRepository.save(category));
+        categoryRepository.save(category);
+        return true;
     }
 }

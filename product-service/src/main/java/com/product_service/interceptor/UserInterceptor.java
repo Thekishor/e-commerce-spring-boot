@@ -1,34 +1,49 @@
 package com.product_service.interceptor;
 
+import com.product_service.dto.UserInfo;
+import com.product_service.exception.BusinessException;
+import com.product_service.exception.ErrorCode;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.jspecify.annotations.Nullable;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
 
 @Component
-public class UserInterceptor implements HandlerInterceptor {
+@Slf4j
+public class UserInterceptor extends OncePerRequestFilter {
 
     @Override
-    public boolean preHandle(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            Object handler
-    ) throws Exception {
-        String userId = request.getHeader("X-User-Id");
-        if (userId != null) {
-            UserContext.setUserId(userId);
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+
+        try {
+            String userId = request.getHeader("X-User-Id");
+            String userEmail = request.getHeader("X-User-Email");
+            String roles = request.getHeader("X-User-Roles");
+
+            log.info("User headers information: {} {} {}", userId, userEmail, roles);
+
+            if (userId == null || userEmail == null || roles.isEmpty()) {
+                log.warn("Missing user headers in request");
+                throw new BusinessException(ErrorCode.USERINFO_NOT_FOUND);
+            }
+            UserInfo userInfo =
+                    new UserInfo(userId, userEmail, roles);
+            UserContext.setUserInfo(userInfo);
+            log.info("UserContext Thread Local information: {} {} {}",
+                    UserContext.getUserId(), UserContext.getUserEmail(), UserContext.getUserRole());
+            filterChain.doFilter(request, response);
+        } finally {
+            UserContext.clear();
         }
-        return true;
-    }
-
-    @Override
-    public void afterCompletion(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            Object handler,
-            @Nullable Exception ex
-    ) throws Exception {
-        UserContext.clear();
     }
 }

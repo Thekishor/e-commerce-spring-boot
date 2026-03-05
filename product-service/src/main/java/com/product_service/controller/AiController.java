@@ -20,8 +20,8 @@ public class AiController {
     private final ChatClient chatClient;
     private final List<Message> conversation;
 
-    public AiController(ChatClient chatClient) {
-        this.chatClient = chatClient;
+    public AiController(ChatClient.Builder chatClient) {
+        this.chatClient = chatClient.build();
         this.conversation = new ArrayList<>();
         final String systemMessage = """
                 Suggest product and category information to users.

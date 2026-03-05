@@ -11,7 +11,7 @@ import java.util.Map;
 
 public interface ProductService {
 
-    ProductResponse createProduct(ProductRequest productRequest, String userId);
+    ProductResponse createProduct(ProductRequest productRequest);
 
     List<PurchaseResponse> createPurchase(List<PurchaseRequest> purchaseRequest);
 

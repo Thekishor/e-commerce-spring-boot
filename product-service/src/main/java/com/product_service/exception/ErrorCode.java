@@ -10,6 +10,7 @@ public enum ErrorCode {
     INSUFFICIENT_STOCK("INSUFFICIENT_STOCK", "Insufficient stock", HttpStatus.BAD_REQUEST),
     INTERNAL_EXCEPTION("INTERNAL_EXCEPTION", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
     CATEGORY_NOT_FOUND("CATEGORY_NOT_FOUND", "Category not found", HttpStatus.NOT_FOUND),
+    USERINFO_NOT_FOUND("USERINFO_NOT_FOUND", "Missing user headers in request", HttpStatus.NOT_FOUND),
     CATEGORY_ALREADY_FOUND("CATEGORY_ALREADY_FOUND", "Category name already exists", HttpStatus.CONFLICT);
 
     private final String code;

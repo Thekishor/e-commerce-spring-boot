@@ -1,9 +1,7 @@
 package com.product_service.controller;
 
-import com.product_service.dto.ProductRequest;
-import com.product_service.dto.ProductResponse;
-import com.product_service.dto.PurchaseRequest;
-import com.product_service.dto.PurchaseResponse;
+import com.product_service.dto.*;
+import com.product_service.interceptor.UserContext;
 import com.product_service.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,23 +22,28 @@ import java.util.Map;
 @Slf4j
 public class ProductController {
 
+    private static final List<String> CREATOR_ROLES = List.of("ADMIN", "CREATOR");
+    private static final List<String> REQUIRED_ROLES = List.of("ADMIN");
     private final ProductService productService;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createProduct(
-            @Valid @RequestBody ProductRequest productRequest,
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") List<String> roles
+    public ResponseEntity<HttpResponse> createProduct(
+            @Valid @RequestBody ProductRequest productRequest
     ) {
-        if (roles.contains("ADMIN") || roles.contains("CREATOR")) {
-            ProductResponse response = productService.createProduct(productRequest, userId);
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        if (CREATOR_ROLES.stream().anyMatch(UserContext.getUserRole()::contains)) {
+            ProductResponse response = productService.createProduct(productRequest);
+            log.info("Product created information: {}", response);
+            return new ResponseEntity<>(HttpResponse.builder()
+                    .message("Product created successfully")
+                    .status(true)
+                    .instant(Instant.now())
+                    .build(), HttpStatus.CREATED);
         } else {
-            return new ResponseEntity<>(Map.of(
-                    "message", "You do not have permission to create product request",
-                    "status", "false",
-                    "timeStamp", Instant.now()
-            ), HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(HttpResponse.builder()
+                    .message("You do not have permission to create product request")
+                    .status(false)
+                    .instant(Instant.now())
+                    .build(), HttpStatus.FORBIDDEN);
         }
     }
 
@@ -79,42 +82,45 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProduct(
-            @PathVariable("id") Integer id,
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") List<String> roles
+    public ResponseEntity<HttpResponse> deleteProduct(
+            @PathVariable("id") Integer id
     ) {
-        if (roles.contains("ADMIN")) {
+        if (REQUIRED_ROLES.stream().allMatch(UserContext.getUserRole()::contains)) {
             productService.deleteProduct(id);
-            log.info("Product deleted by user: {} {}", userId, roles);
-            return new ResponseEntity<>(Map.of(
-                    "message", "Product deleted successfully"
-            ), HttpStatus.NOT_FOUND);
+            log.info("Product deleted successfully");
+            return new ResponseEntity<>(HttpResponse.builder()
+                    .message("Product deleted successfully")
+                    .status(true)
+                    .instant(Instant.now())
+                    .build(), HttpStatus.OK);
         }
-        return new ResponseEntity<>(Map.of(
-                "message", "Only Admin can delete the product",
-                "status", "false",
-                "timeStamp", Instant.now()
-        ), HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>(HttpResponse.builder()
+                .message("Only Admin can delete the product")
+                .status(false)
+                .instant(Instant.now())
+                .build(), HttpStatus.FORBIDDEN);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProduct(
+    public ResponseEntity<HttpResponse> updateProduct(
             @PathVariable("id") Integer id,
-            @Valid @RequestBody ProductRequest productRequest,
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") List<String> roles
+            @Valid @RequestBody ProductRequest productRequest
     ) {
-        if (roles.contains("ADMIN")) {
+        if (REQUIRED_ROLES.stream().allMatch(UserContext.getUserRole()::contains)) {
             ProductResponse productResponse = productService.updateProduct(id, productRequest);
-            log.info("Product updated by user: {} {}", userId, roles);
-            return new ResponseEntity<>(productResponse, HttpStatus.OK);
+            log.info("Product updated successfully: {}", productResponse);
+            return new ResponseEntity<>(HttpResponse.builder()
+                    .message("Product updated successfully")
+                    .status(true)
+                    .instant(Instant.now())
+                    .build(), HttpStatus.OK
+            );
         } else {
-            return new ResponseEntity<>(Map.of(
-                    "message", "Only Admin can update the product information",
-                    "status", "false",
-                    "timeStamp", Instant.now()
-            ), HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(HttpResponse.builder()
+                    .message("Only Admin can update the product information")
+                    .status(false)
+                    .instant(Instant.now())
+                    .build(), HttpStatus.FORBIDDEN);
         }
     }
 }

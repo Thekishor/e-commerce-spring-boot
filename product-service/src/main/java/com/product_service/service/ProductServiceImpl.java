@@ -8,6 +8,7 @@ import com.product_service.entities.Category;
 import com.product_service.entities.Product;
 import com.product_service.exception.BusinessException;
 import com.product_service.exception.ErrorCode;
+import com.product_service.interceptor.UserContext;
 import com.product_service.repository.CategoryRepository;
 import com.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,13 +36,13 @@ public class ProductServiceImpl implements ProductService {
 
     @CachePut(value = "PRODUCT_CACHE", key = "#result.productId")
     @Override
-    public ProductResponse createProduct(ProductRequest productRequest, String userId) {
+    public ProductResponse createProduct(ProductRequest productRequest) {
         if (!categoryRepository.existsById(productRequest.getCategoryId())) {
             log.error("Category not found with id");
             throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
         }
         Product product = mapProductRequestToProductEntity(productRequest);
-        product.setUserId(userId);
+        product.setUserId(UserContext.getUserId());
         Product savedProduct = productRepository.save(product);
         return mapProductEntityToProductResponse(savedProduct);
     }

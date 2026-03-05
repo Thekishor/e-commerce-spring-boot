@@ -2,6 +2,8 @@ package com.product_service.controller;
 
 import com.product_service.dto.CategoryRequest;
 import com.product_service.dto.CategoryResponse;
+import com.product_service.dto.HttpResponse;
+import com.product_service.interceptor.UserContext;
 import com.product_service.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,8 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/category")
@@ -20,24 +21,34 @@ import java.util.Map;
 @Slf4j
 public class CategoryController {
 
+    private static final List<String> CREATOR_ROLES = List.of("ADMIN", "CREATOR");
+    private static final List<String> REQUIRED_ROLES = List.of("ADMIN");
     private final CategoryService categoryService;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createCategory(
-            @Valid @RequestBody CategoryRequest categoryRequest,
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") List<String> roles
+    public ResponseEntity<HttpResponse> createCategory(
+            @Valid @RequestBody CategoryRequest categoryRequest
     ) {
-        if (roles.contains("ADMIN") || roles.contains("CREATOR")) {
-            CategoryResponse categoryResponse = categoryService.createCategory(categoryRequest, userId);
+        log.info("Category name: {}", categoryRequest.getName());
+
+        if (CREATOR_ROLES.stream().anyMatch(UserContext.getUserRole()::contains)) {
+            CategoryResponse categoryResponse = categoryService.createCategory(categoryRequest);
             log.info("Category created successfully: {}", categoryResponse.getName());
-            return new ResponseEntity<>(categoryResponse, HttpStatus.CREATED);
+            return new ResponseEntity<>(
+                    HttpResponse.builder()
+                            .message("Category created successfully")
+                            .status(true)
+                            .instant(Instant.now())
+                            .build(), HttpStatus.CREATED);
         } else {
-            return new ResponseEntity<>(Map.of(
-                    "message", "You do not have permission to create category request",
-                    "status", "false",
-                    "timeStamp", Instant.now()
-            ), HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(
+                    HttpResponse.builder()
+                            .message("You do not have permission to create category request")
+                            .status(false)
+                            .instant(Instant.now())
+                            .build(),
+                    HttpStatus.FORBIDDEN
+            );
         }
     }
 
@@ -54,43 +65,54 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteCategory(
-            @PathVariable("id") Integer id,
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") String roles
+    public ResponseEntity<HttpResponse> deleteCategory(
+            @PathVariable("id") Integer id
     ) {
-        if (roles.contains("ADMIN")) {
+        if (REQUIRED_ROLES.stream().allMatch(UserContext.getUserRole()::contains)) {
             categoryService.deleteCategory(id);
-            log.info("Category deleted by user: {} {} ", userId, roles);
-            return new ResponseEntity<>(Map.of(
-                    "message", "Category Deleted Successfully"
-            ), HttpStatus.NOT_FOUND);
+            log.info("Category deleted successfully: {} ", UserContext.getUserId());
+            return new ResponseEntity<>(HttpResponse.builder()
+                    .message("Category created successfully")
+                    .status(true)
+                    .instant(Instant.now())
+                    .build(), HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(Map.of(
-                    "message", "You do not have permission to delete the category",
-                    "status", "false",
-                    "timeStamp", Instant.now()
-            ), HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(HttpResponse.builder()
+                    .message("You do not have permission to delete the category")
+                    .status(false)
+                    .instant(Instant.now())
+                    .build(), HttpStatus.FORBIDDEN);
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCategory(
+    public ResponseEntity<HttpResponse> updateCategory(
             @PathVariable("id") Integer id,
-            @Valid @RequestBody CategoryRequest categoryRequest,
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") String roles
+            @Valid @RequestBody CategoryRequest categoryRequest
     ) {
-        if (roles.contains("ADMIN")) {
-            CategoryResponse categoryResponse = categoryService.updateCategory(id, categoryRequest);
-            log.info("Category updated successfully by user: {} {}", userId, roles);
-            return new ResponseEntity<>(categoryResponse, HttpStatus.OK);
+        if (REQUIRED_ROLES.stream().allMatch(UserContext.getUserRole()::contains)) {
+            boolean updated = categoryService.updateCategory(id, categoryRequest);
+            if (updated) {
+                log.info("Category updated successfully by user: {}", UserContext.getUserId());
+                return new ResponseEntity<>(HttpResponse.builder()
+                        .message("Category updated successfully")
+                        .status(true)
+                        .instant(Instant.now())
+                        .build(), HttpStatus.OK);
+            } else {
+                log.error("Unable to updated category");
+                return new ResponseEntity<>(HttpResponse.builder()
+                        .message("Unable to updated category")
+                        .status(false)
+                        .instant(Instant.now())
+                        .build(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         } else {
-            return new ResponseEntity<>(Map.of(
-                    "message", "Only Admin can update the category information",
-                    "status", "false",
-                    "timeStamp", Instant.now()
-            ), HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(HttpResponse.builder()
+                    .message("Only Admin can update the category information")
+                    .status(false)
+                    .instant(Instant.now())
+                    .build(), HttpStatus.FORBIDDEN);
         }
     }
 }
