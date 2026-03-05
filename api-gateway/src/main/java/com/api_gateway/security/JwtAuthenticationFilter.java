@@ -1,6 +1,8 @@
 package com.api_gateway.security;
 
 import com.api_gateway.dto.UserResponse;
+import com.api_gateway.exception.BusinessException;
+import com.api_gateway.exception.ErrorCode;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +41,7 @@ public class JwtAuthenticationFilter implements WebFilter {
 
             if (jwtTokenHelper.isRefreshToken(token)) {
                 log.warn("Refresh token not allowed to access resources");
-                throw new RuntimeException("Refresh token not allowed to access resources");
+                throw new BusinessException(ErrorCode.INVALID_TOKEN);
             }
 
             if (jwtTokenHelper.validateToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -52,7 +54,6 @@ public class JwtAuthenticationFilter implements WebFilter {
                                 null,
                                 userResponse.getRole().stream().map(SimpleGrantedAuthority::new).toList()
                         );
-                authenticationToken.setDetails(exchange);
                 SecurityContext context = new SecurityContextImpl(authenticationToken);
 
                 //set the principal header in the request
@@ -71,6 +72,7 @@ public class JwtAuthenticationFilter implements WebFilter {
                         ReactiveSecurityContextHolder.withSecurityContext(Mono.just(context)));
             } else {
                 log.error("TOKEN IS MALFORMED OR EXPIRED");
+                throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
             }
         } else {
             log.error("TOKEN NOT FOUND");

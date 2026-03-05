@@ -1,4 +1,4 @@
-package com.user_service.exception;
+package com.api_gateway.exception;
 
 import lombok.Getter;
 

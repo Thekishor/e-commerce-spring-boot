@@ -1,6 +1,5 @@
 package com.api_gateway.config;
 
-import com.api_gateway.security.JwtAuthenticationEntryPoint;
 import com.api_gateway.security.JwtAuthenticationFilter;
 import common.events.utils.PermitUrls;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +18,6 @@ import reactor.core.publisher.Mono;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
