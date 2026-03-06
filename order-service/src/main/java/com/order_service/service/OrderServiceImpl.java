@@ -2,9 +2,11 @@ package com.order_service.service;
 
 import com.order_service.dto.*;
 import com.order_service.entities.Order;
-import com.order_service.exception.ResourceNotFoundException;
+import com.order_service.exception.BusinessException;
+import com.order_service.exception.ErrorCode;
 import com.order_service.feign.ProductClient;
 import com.order_service.feign.UserClient;
+import com.order_service.interceptor.UserContext;
 import com.order_service.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import common.events.kafkaEvents.OrderEvent;
 import common.events.kafkaEvents.PurchaseResponse;
+
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -34,19 +37,19 @@ public class OrderServiceImpl implements OrderService {
     private final KafkaMessageProducer kafkaMessageProducer;
 
     @Override
-    public void createOrder(OrderRequest orderRequest, String authHeader, String userId) {
+    public void createOrder(OrderRequest orderRequest, String authHeader) {
 
         UserResponse userResponse = userClient.findByUserId(userId, authHeader);
         if (userResponse == null) {
             log.error("User not found with userId: {}", userId);
-            throw new ResourceNotFoundException("User not found with userId" + userId);
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND, userId);
         }
 
         List<PurchaseResponse> purchaseResponses =
                 productClient.purchaseResponses(orderRequest.getPurchaseRequest(), authHeader);
 
         Order order = mapOrderRequestToOrderEntity(orderRequest);
-        order.setUserId(userId);
+        order.setUserId(UserContext.getUserId());
         order.setAmount(purchaseResponses.stream().mapToLong(PurchaseResponse::getPrice).sum());
         Order savedOrder = orderRepository.save(order);
 
@@ -112,7 +115,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse getOrderById(Integer orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND, orderId));
         return mapOrderEntityToOrderResponse(order);
     }
 }

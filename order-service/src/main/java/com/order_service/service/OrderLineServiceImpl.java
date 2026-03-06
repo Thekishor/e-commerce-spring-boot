@@ -4,7 +4,8 @@ import com.order_service.dto.OrderLineRequest;
 import com.order_service.dto.OrderLineResponse;
 import com.order_service.entities.Order;
 import com.order_service.entities.OrderLine;
-import com.order_service.exception.ResourceNotFoundException;
+import com.order_service.exception.BusinessException;
+import com.order_service.exception.ErrorCode;
 import com.order_service.repository.OrderLineRepository;
 import com.order_service.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +25,7 @@ public class OrderLineServiceImpl implements OrderLineService {
     @Override
     public void createOrderLine(OrderLineRequest orderLineRequest) {
         Order order = orderRepository.findById(orderLineRequest.getOrderId())
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id" + orderLineRequest.getOrderId()));
-        System.out.println(order);
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND, orderLineRequest.getOrderId()));
         log.info("Order Information: {}", order);
         OrderLine orderLine = mapOrderLineRequestToOrderLineEntity(orderLineRequest);
         orderLine.setOrder(order);

@@ -3,8 +3,9 @@ package com.order_service.controller;
 import com.order_service.dto.OrderLineResponse;
 import com.order_service.dto.OrderRequest;
 import com.order_service.dto.OrderResponse;
-import com.order_service.exception.ResourceNotFoundException;
-import com.order_service.exception.UnauthorizedException;
+import com.order_service.exception.BusinessException;
+import com.order_service.exception.ErrorCode;
+import com.order_service.interceptor.UserContext;
 import com.order_service.service.OrderLineService;
 import com.order_service.service.OrderService;
 import jakarta.validation.Valid;
@@ -24,39 +25,38 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OrderController {
 
+    private static final List<String> REQUIRED_ROLES = List.of("ADMIN");
+
     private final OrderService orderService;
     private final OrderLineService orderLineService;
 
     @PostMapping("/create")
     public ResponseEntity<?> createOrder(
             @Valid @RequestBody OrderRequest orderRequest,
-            @RequestHeader("X-User-Id") String userId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
     ) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             try {
-                orderService.createOrder(orderRequest, authHeader, userId);
+                orderService.createOrder(orderRequest, authHeader);
                 return new ResponseEntity<>(Map.of(
                         "message", "Order created successfully"
                 ), HttpStatus.CREATED);
             } catch (Exception exception) {
                 log.error("Error occurs during order creating: {}", exception.getMessage());
-                throw new ResourceNotFoundException("Error occurs during order creating");
+                throw new BusinessException(ErrorCode.INTERNAL_EXCEPTION);
             }
         } else {
             log.error("Authorization header missing or invalid");
-            throw new UnauthorizedException("Authorization header missing or invalid");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_EXCEPTION);
         }
     }
 
     @GetMapping
     public ResponseEntity<?> findAllOrders(
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") List<String> roles
-    ) {
-        if (roles.contains("ADMIN")) {
+            @RequestHeader("X-User-Id") String userId) {
+        if (REQUIRED_ROLES.stream().allMatch(UserContext.getUserRole()::contains)) {
             List<OrderResponse> orderResponses = orderService.getAllOrders();
-            log.info("Order responses details seen by user: {} {}", userId, roles);
+            log.info("Order responses by user: {}", userId);
             return new ResponseEntity<>(orderResponses, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(Map.of(

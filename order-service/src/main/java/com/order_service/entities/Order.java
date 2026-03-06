@@ -1,8 +1,10 @@
 package com.order_service.entities;
 
+import com.order_service.auditing.BaseEntity;
 import com.order_service.constant.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -14,12 +16,8 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class Order {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+@SuperBuilder
+public class Order extends BaseEntity {
 
     @Column(nullable = false)
     private String orderNumber;
