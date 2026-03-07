@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
-import common.events.kafkaEvents.OrderEvent;
+import common.events.kafka.OrderEvent;
 
 import java.util.concurrent.CompletableFuture;
 

@@ -3,6 +3,7 @@ package com.order_service.controller;
 import com.order_service.dto.OrderLineResponse;
 import com.order_service.dto.OrderRequest;
 import com.order_service.dto.OrderResponse;
+import com.order_service.dto.UserInfo;
 import com.order_service.exception.BusinessException;
 import com.order_service.exception.ErrorCode;
 import com.order_service.interceptor.UserContext;
@@ -33,10 +34,22 @@ public class OrderController {
     @PostMapping("/create")
     public ResponseEntity<?> createOrder(
             @Valid @RequestBody OrderRequest orderRequest,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader,
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Email") String email,
+            @RequestHeader("X-User-Roles") String roles
     ) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             try {
+                log.info("User headers information: {} {} {}", userId, email, roles);
+
+                if (userId == null || email == null || roles.isEmpty()) {
+                    log.warn("Missing user headers in request");
+                    throw new BusinessException(ErrorCode.USERINFO_FOUND);
+                }
+                UserInfo userInfo =
+                        new UserInfo(userId, email, roles);
+                UserContext.setUserInfo(userInfo);
                 orderService.createOrder(orderRequest, authHeader);
                 return new ResponseEntity<>(Map.of(
                         "message", "Order created successfully"

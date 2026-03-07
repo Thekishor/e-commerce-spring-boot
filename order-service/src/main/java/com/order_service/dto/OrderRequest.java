@@ -5,7 +5,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.*;
 
 import java.util.List;
@@ -19,9 +18,6 @@ public class OrderRequest {
 
     @NotBlank(message = "Reference cannot be empty")
     private String reference;
-
-    @Positive(message = "Order total amount should be positive")
-    private Long amount;
 
     @NotNull(message = "Payment method cannot be null")
     private PaymentMethod paymentMethod;

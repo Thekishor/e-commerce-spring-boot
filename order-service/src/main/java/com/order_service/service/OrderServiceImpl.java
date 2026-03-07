@@ -12,8 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import common.events.kafkaEvents.OrderEvent;
-import common.events.kafkaEvents.PurchaseResponse;
+import common.events.kafka.OrderEvent;
+import common.events.dto.PurchaseResponse;
 
 import java.security.SecureRandom;
 import java.time.LocalDate;
@@ -26,9 +26,9 @@ import java.util.List;
 public class OrderServiceImpl implements OrderService {
 
     @Value("${alphanumeric.value}")
-    private final String alphanumeric;
+    private String alphanumeric;
 
-    private static final SecureRandom random = new SecureRandom();
+    private final SecureRandom random = new SecureRandom();
 
     private final OrderRepository orderRepository;
     private final UserClient userClient;
@@ -39,6 +39,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void createOrder(OrderRequest orderRequest, String authHeader) {
 
+        final String userId = UserContext.getUserId();
+
         UserResponse userResponse = userClient.findByUserId(userId, authHeader);
         if (userResponse == null) {
             log.error("User not found with userId: {}", userId);
@@ -46,10 +48,16 @@ public class OrderServiceImpl implements OrderService {
         }
 
         List<PurchaseResponse> purchaseResponses =
-                productClient.purchaseResponses(orderRequest.getPurchaseRequest(), authHeader);
+                productClient.purchaseResponses(
+                        orderRequest.getPurchaseRequest(),
+                        authHeader,
+                        UserContext.getUserId(),
+                        UserContext.getUserEmail(),
+                        UserContext.getUserRole()
+                );
 
         Order order = mapOrderRequestToOrderEntity(orderRequest);
-        order.setUserId(UserContext.getUserId());
+        order.setUserId(userId);
         order.setAmount(purchaseResponses.stream().mapToLong(PurchaseResponse::getPrice).sum());
         Order savedOrder = orderRepository.save(order);
 
@@ -64,17 +72,16 @@ public class OrderServiceImpl implements OrderService {
             );
         }
 
-        OrderEvent orderEvent = new OrderEvent();
-        orderEvent.setReference(savedOrder.getReference());
-        orderEvent.setOrderNumber(savedOrder.getOrderNumber());
-        orderEvent.setPaymentMethod(savedOrder.getPaymentMethod().toString());
-        orderEvent.setAmount(savedOrder.getAmount());
-        orderEvent.setUsername(userResponse.getUsername());
-        orderEvent.setEmail(userResponse.getEmail());
-        orderEvent.setPurchaseResponseList(purchaseResponses);
-
         //creating order event for notification
-        kafkaMessageProducer.sendOrderEventMessage(orderEvent);
+        kafkaMessageProducer.sendOrderEventMessage(OrderEvent.builder()
+                .reference(savedOrder.getReference())
+                .orderNumber(savedOrder.getOrderNumber())
+                .paymentMethod(savedOrder.getPaymentMethod().toString())
+                .amount(savedOrder.getAmount())
+                .username(userResponse.getUsername())
+                .email(userResponse.getEmail())
+                .purchaseResponseList(purchaseResponses)
+                .build());
     }
 
     private OrderResponse mapOrderEntityToOrderResponse(Order savedOrder) {
