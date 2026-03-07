@@ -1,6 +1,6 @@
 package com.notification_service.config;
 
-import common.events.kafkaEvents.OrderEvent;
+import common.events.kafka.OrderEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.context.annotation.Bean;
