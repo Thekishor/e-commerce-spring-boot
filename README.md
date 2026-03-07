@@ -22,7 +22,7 @@
 - Password reset and change flows
 - Role-based authorization (ADMIN/USER)
 - User login attempts limit with redis
-- Swagger Api for documentation[README.md](README.md)
+- Swagger Api for documentation
 - Spring Jpa Auditing with Base Entity
 
 ## 2. Product Service
