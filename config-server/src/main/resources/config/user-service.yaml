@@ -39,7 +39,7 @@ kafka:
 app:
   security:
     jwt:
-      access-token-expiration: 1200000  #20 min
+      access-token-expiration: 2400000  #40 min
       refresh-token-expiration: 172800000   #2 days
   disposable-email: 10minutemail,20minutemail,33mail,5ymail,anonbox,guerrillamail,mailinator,maildrop,mailnesia,moakt,my10minutemail,throwawaymail,trashmail,temp-mail,tempmail,truemail,yopmail
 jwt:
