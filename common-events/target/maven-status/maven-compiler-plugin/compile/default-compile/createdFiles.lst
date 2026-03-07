@@ -1,0 +1,3 @@
+common\events\dto\PurchaseResponse$PurchaseResponseBuilder.class
+common\events\kafka\OrderEvent$OrderEventBuilder.class
+common\events\kafka\UserRegisterEvent$UserRegisterEventBuilder.class
