@@ -2,7 +2,7 @@ server:
   port: 9005
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/notification_db
+    url: jdbc:postgresql://localhost:5433/notification_db
     username: postgres
     password: kishor@2233#
     driver-class-name: org.postgresql.Driver

@@ -18,5 +18,6 @@ public class OrderEvent {
     private String paymentMethod;
     private String username;
     private String email;
+    private String userId;
     private List<PurchaseResponse> purchaseResponseList;
 }

@@ -1,7 +1,8 @@
 package common.events.kafka;
 
 import lombok.*;
-import java.util.Map;
+
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -10,8 +11,9 @@ import java.util.Map;
 @Builder
 public class UserRegisterEvent {
 
-    private String event;
+    private String username;
     private String userId;
     private String email;
-    private Map<String, Object> template;
+    private String url;
+    private LocalDateTime localDateTime;
 }

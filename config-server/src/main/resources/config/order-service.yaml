@@ -2,7 +2,7 @@ server:
   port: 9003
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/order_db
+    url: jdbc:postgresql://localhost:5433/order_db
     username: postgres
     password: kishor@2233#
     driver-class-name: org.postgresql.Driver
