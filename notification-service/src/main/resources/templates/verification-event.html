@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta>
+    <title>Verification</title>
+</head>
+<body>
+<div class="container">
+    <h1>Verification User</h1>
+    <p>Dear: <span th:text="${username}"></span> </p>
+    <p> Thank you for registering.</p>
+    <p>Please confirm your email address by clicking the button below:</p>
+    <p>
+        <a th:href="${verificationLink}">
+            Verify Email
+        </a>
+    </p>
+    <p>This link will expire in one hour.</p>
+    <h3>Regards, Kishor Pandey</h3>
+</div>
+</body>
+</html>

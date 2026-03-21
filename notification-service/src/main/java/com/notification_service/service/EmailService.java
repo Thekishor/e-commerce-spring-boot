@@ -65,4 +65,36 @@ public class EmailService {
         }
     }
 
+    public void sendUserVerificationEmail(
+            String toEmail,
+            String username,
+            String verificationLink
+    ) throws MessagingException {
+        MimeMessage message = javaMailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
+
+        final String template = EmailTemplates.VERIFICATION_EVENT.getTemplate();
+        final String subject = EmailTemplates.VERIFICATION_EVENT.getSubject();
+
+        Map<String, Object> variable = new HashMap<>();
+        variable.put("username", username);
+        variable.put("verificationLink", verificationLink);
+
+        Context context = new Context();
+        context.setVariables(variable);
+
+        try {
+            String htmlTemplate = templateEngine.process(template, context);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setFrom(email);
+            helper.setText(htmlTemplate, true);
+            javaMailSender.send(message);
+        } catch (MessagingException exception) {
+            log.warn("WARNING- Can not send email during verification user register processing to:  {}", toEmail);
+        } catch (Exception exception) {
+            log.error("Error Occurs During Mail Sending verification user register: {}", exception.getMessage(), exception);
+        }
+    }
+
 }

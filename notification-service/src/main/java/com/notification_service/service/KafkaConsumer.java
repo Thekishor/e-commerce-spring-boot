@@ -2,6 +2,7 @@ package com.notification_service.service;
 
 import com.notification_service.entities.Notification;
 import com.notification_service.repository.NotificationRepository;
+import common.events.kafka.UserRegisterEvent;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +28,11 @@ public class KafkaConsumer {
             backOff = @BackOff(delay = 3000, multiplier = 1.5, maxDelay = 15000),
             exclude = {NullPointerException.class}
     )
-    @KafkaListener(topics = "order-event", groupId = "order-event-listener", containerFactory = "listenerContainerFactory")
+    @KafkaListener(
+            topics = "order-event",
+            groupId = "order-event-group",
+            containerFactory = "listenerContainerFactoryOrderEvent"
+    )
     public void consumeOrderEventFromOrderService(OrderEvent orderEvent) throws MessagingException {
         log.info("Consuming the message from order");
 
@@ -36,6 +41,7 @@ public class KafkaConsumer {
                         .notificationType("order-event")
                         .localDateTime(LocalDateTime.now())
                         .userEmail(orderEvent.getEmail())
+                        .userId(orderEvent.getUserId())
                         .build()
         );
         emailService.sendOrderConfirmationEmail(
@@ -47,9 +53,42 @@ public class KafkaConsumer {
         );
     }
 
+    @RetryableTopic(
+            attempts = "4",
+            backOff = @BackOff(delay = 3000, multiplier = 1.5, maxDelay = 15000),
+            exclude = {NullPointerException.class}
+    )
+    @KafkaListener(
+            topics = "user-registration",
+            groupId = "user-event-group",
+            containerFactory = "listenerContainerFactoryUserEvent"
+    )
+    public void consumeUserVerificationUrl(UserRegisterEvent userRegisterEvent) throws MessagingException {
+        log.info("Consuming the message from user");
+
+        notificationRepository.save(
+                Notification.builder()
+                        .notificationType("user-verification")
+                        .localDateTime(userRegisterEvent.getLocalDateTime())
+                        .userEmail(userRegisterEvent.getEmail())
+                        .userId(userRegisterEvent.getUserId())
+                        .build()
+        );
+
+        emailService.sendUserVerificationEmail(
+                userRegisterEvent.getEmail(),
+                userRegisterEvent.getUsername(),
+                userRegisterEvent.getUrl()
+        );
+    }
+
     @DltHandler
     public void listenDLT(OrderEvent orderEvent) {
-        log.info("DLT Received : {}", orderEvent.getUsername());
+        log.info("DLT Received -> OrderEvent: {}", orderEvent.getUsername());
+    }
 
+    @DltHandler
+    public void userEventListenDLT(UserRegisterEvent userRegisterEvent) {
+        log.info("DLT Received -> UserEvent: {}", userRegisterEvent.getUserId());
     }
 }

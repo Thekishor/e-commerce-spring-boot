@@ -23,4 +23,6 @@ public class Notification {
     private LocalDateTime localDateTime;
 
     private String userEmail;
+
+    private String userId;
 }
