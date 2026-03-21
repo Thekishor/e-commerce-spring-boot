@@ -11,6 +11,7 @@ import com.user_service.repository.PasswordResetTokenRepository;
 import com.user_service.repository.UserRepository;
 import com.user_service.repository.VerificationTokenRepository;
 import com.user_service.security.CustomUserDetails;
+import common.events.kafka.UserRegisterEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +47,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final LoginAttemptService loginAttemptService;
     private final JwtTokenRepository jwtTokenRepository;
+    private final UserVerificationProducer verificationProducer;
 
     @Override
     public UserResponse createUser(UserRequest userRequest) {
@@ -77,13 +79,15 @@ public class UserServiceImpl implements UserService {
 
     private void sendVerificationLink(VerificationToken savedToken, User savedUser) {
         String verificationLink = url + "/activate?token=" + savedToken.getActivationToken();
-        try {
-            emailService.sendEmailVerificationLink(savedUser.getEmail(), verificationLink, savedUser.getUsername());
-            log.info("Sending email verification link to user");
-        } catch (Exception exception) {
-            log.error("Exception occurred while sending verification link to user: {}", exception.getMessage());
-            throw new BusinessException(ErrorCode.INTERNAL_EXCEPTION);
-        }
+        verificationProducer.sendUserVerificationMessage(
+                UserRegisterEvent.builder()
+                        .username(savedUser.getUsername())
+                        .userId(savedUser.getUserId())
+                        .email(savedUser.getEmail())
+                        .url(verificationLink)
+                        .localDateTime(LocalDateTime.now())
+                        .build()
+        );
     }
 
     @Override
@@ -278,6 +282,12 @@ public class UserServiceImpl implements UserService {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public List<UserResponse> isEmailVerified() {
+        List<User> verifiedUser = userRepository.findAll().stream().filter(User::getEmailVerified).toList();
+        return verifiedUser.stream().map(userMapper::mapUserEntityToUserResponse).toList();
     }
 
     private User getCurrentLoggedInUser() {

@@ -3,8 +3,6 @@ package com.user_service.controller;
 import com.user_service.dto.*;
 import com.user_service.service.UserService;
 import io.swagger.v3.oas.annotations.Hidden;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,20 +24,6 @@ public class UserController {
     private static final String MESSAGE = "message";
     private final UserService userService;
 
-    @Operation(
-            description = "user register",
-            summary = "Create user account/ New user signup",
-            responses = {
-                    @ApiResponse(
-                            description = "Success",
-                            responseCode = "200"
-                    ),
-                    @ApiResponse(
-                            description = "Internal Server Error",
-                            responseCode = "500"
-                    )
-            }
-    )
     @PostMapping("/register")
     public ResponseEntity<Map<String, String>> createUser(
             @Valid @RequestBody UserRequest userRequest
@@ -67,20 +51,6 @@ public class UserController {
         }
     }
 
-    @Operation(
-            description = "user login",
-            summary = "user login rate limit",
-            responses = {
-                    @ApiResponse(
-                            description = "Success",
-                            responseCode = "200"
-                    ),
-                    @ApiResponse(
-                            description = "Invalid username or password",
-                            responseCode = "401"
-                    )
-            }
-    )
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody AuthRequest authRequest) {
         try {
@@ -100,50 +70,24 @@ public class UserController {
         }
     }
 
-    @Operation(
-            description = "logout user",
-            summary = "user logout",
-            responses = {
-                    @ApiResponse(
-                            description = "Success",
-                            responseCode = "200"
-                    ),
-                    @ApiResponse(
-                            description = "Internal Server Error",
-                            responseCode = "401"
-                    )
-            }
-    )
+    @GetMapping("/isEmailVerified")
+    public ResponseEntity<List<UserResponse>> getEmailVerifiedUser() {
+        List<UserResponse> emailVerified = userService.isEmailVerified();
+        return new ResponseEntity<>(emailVerified, HttpStatus.OK);
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<String> logout() {
         userService.logout();
         return ResponseEntity.ok("You have been signed out");
     }
 
-    @Operation(
-            description = "refresh token",
-            summary = "refresh token for new access token"
-    )
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
         Map<String, Object> objectMap = userService.refreshToken(refreshRequest);
         return new ResponseEntity<>(objectMap, HttpStatus.OK);
     }
 
-    @Operation(
-            description = "change password",
-            summary = "change user password",
-            responses = {
-                    @ApiResponse(
-                            description = "Success",
-                            responseCode = "200"
-                    ),
-                    @ApiResponse(
-                            description = "Internal Server Error",
-                            responseCode = "401"
-                    )
-            }
-    )
     @PostMapping("/changePassword")
     public ResponseEntity<Map<String, String>> changePassword(
             @Valid @RequestBody PasswordModel passwordModel
@@ -169,20 +113,6 @@ public class UserController {
         ), HttpStatus.OK);
     }
 
-    @Operation(
-            description = "reset password",
-            summary = "reset user password",
-            responses = {
-                    @ApiResponse(
-                            description = "Success",
-                            responseCode = "200"
-                    ),
-                    @ApiResponse(
-                            description = "Internal Server Error",
-                            responseCode = "401"
-                    )
-            }
-    )
     @PostMapping("/resetPassword")
     public ResponseEntity<Map<String, String>> resetPassword(
             @Valid @RequestBody ResetPasswordModel resetPasswordModel
@@ -210,20 +140,6 @@ public class UserController {
         ), HttpStatus.BAD_REQUEST);
     }
 
-    @Operation(
-            description = "delete user",
-            summary = "delete the user account",
-            responses = {
-                    @ApiResponse(
-                            description = "Success",
-                            responseCode = "200"
-                    ),
-                    @ApiResponse(
-                            description = "Internal Server Error",
-                            responseCode = "401"
-                    )
-            }
-    )
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable("id") Integer id) {
@@ -231,20 +147,6 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User deleted successfully");
     }
 
-    @Operation(
-            description = "Get all user",
-            summary = "only admin should be able to access users info",
-            responses = {
-                    @ApiResponse(
-                            description = "Success",
-                            responseCode = "200"
-                    ),
-                    @ApiResponse(
-                            description = "Unauthorized",
-                            responseCode = "403"
-                    )
-            }
-    )
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping
     public ResponseEntity<List<UserResponse>> findAllUser() {
@@ -252,20 +154,6 @@ public class UserController {
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
-    @Operation(
-            description = "Get by user",
-            summary = "Get user info or details by user id",
-            responses = {
-                    @ApiResponse(
-                            description = "Success",
-                            responseCode = "200"
-                    ),
-                    @ApiResponse(
-                            description = "Unauthorized",
-                            responseCode = "403"
-                    )
-            }
-    )
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> findByUserId(@PathVariable("userId") String userId) {
         UserResponse user = userService.findByUserId(userId);

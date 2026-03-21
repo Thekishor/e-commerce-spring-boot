@@ -34,4 +34,6 @@ public interface UserService {
     void generatePasswordResetToken(String email);
 
     boolean validatePasswordResetToken(String token, SavePassword savePassword);
+
+    List<UserResponse> isEmailVerified();
 }
