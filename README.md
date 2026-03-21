@@ -18,7 +18,7 @@
 - localhost:9000/api/user/**
 - User registration and authentication
 - Jwt Token(access token) and Refresh Token
-- Email verification during registration
+- Kafka Producer for Email verification
 - Password reset and change flows
 - Role-based authorization (ADMIN/USER)
 - User login attempts limit with redis
@@ -40,7 +40,7 @@
 
 ## 4. Notification Service
 - localhost:9005
-- Listens to kafka order events
+- Listens to kafka order events and user register event
 - Sends email notifications
 - Uses asynchronous processing for scalability 
 
