@@ -80,6 +80,7 @@ public class OrderServiceImpl implements OrderService {
                 .amount(savedOrder.getAmount())
                 .username(userResponse.getUsername())
                 .email(userResponse.getEmail())
+                .userId(userResponse.getUserId())
                 .purchaseResponseList(purchaseResponses)
                 .build());
     }
