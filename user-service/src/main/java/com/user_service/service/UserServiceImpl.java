@@ -81,6 +81,7 @@ public class UserServiceImpl implements UserService {
         String verificationLink = url + "/activate?token=" + savedToken.getActivationToken();
         verificationProducer.sendUserVerificationMessage(
                 UserRegisterEvent.builder()
+                        .eventId(UUID.randomUUID().toString())
                         .username(savedUser.getUsername())
                         .userId(savedUser.getUserId())
                         .email(savedUser.getEmail())

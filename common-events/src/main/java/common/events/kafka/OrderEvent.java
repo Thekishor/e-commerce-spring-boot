@@ -12,6 +12,7 @@ import java.util.List;
 @Builder
 public class OrderEvent {
 
+    private String eventId;
     private String reference;
     private String orderNumber;
     private Long amount;

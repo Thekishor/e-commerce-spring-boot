@@ -19,7 +19,7 @@ public class UserVerificationProducer {
     public void sendUserVerificationMessage(UserRegisterEvent userRegisterEvent) {
         try {
             CompletableFuture<SendResult<String, Object>> completableFuture =
-                    kafkaTemplate.send("user-registration", userRegisterEvent);
+                    kafkaTemplate.send("user-registration", userRegisterEvent.getUserId(), userRegisterEvent);
             completableFuture.whenComplete((result, exception) -> {
                 if (exception == null) {
                     log.info("Send message with offset {} {}: ", userRegisterEvent, result.getRecordMetadata().offset());

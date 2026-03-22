@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 public class UserRegisterEvent {
 
+    private String eventId;
     private String username;
     private String userId;
     private String email;

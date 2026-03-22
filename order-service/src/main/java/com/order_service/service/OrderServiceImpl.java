@@ -19,6 +19,7 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -74,6 +75,7 @@ public class OrderServiceImpl implements OrderService {
 
         //creating order event for notification
         kafkaMessageProducer.sendOrderEventMessage(OrderEvent.builder()
+                .eventId(UUID.randomUUID().toString())
                 .reference(savedOrder.getReference())
                 .orderNumber(savedOrder.getOrderNumber())
                 .paymentMethod(savedOrder.getPaymentMethod().toString())
