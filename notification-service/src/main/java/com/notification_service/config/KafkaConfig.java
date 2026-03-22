@@ -25,9 +25,8 @@ public class KafkaConfig {
         configProp.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         configProp.put(ConsumerConfig.GROUP_ID_CONFIG, "order-event-group");
         configProp.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
+        configProp.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         configProp.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, "*");
-        configProp.put(JacksonJsonDeserializer.USE_TYPE_INFO_HEADERS, true);
         return new DefaultKafkaConsumerFactory<>(
                 configProp,
                 new StringDeserializer(),
@@ -43,7 +42,6 @@ public class KafkaConfig {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         props.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(JacksonJsonDeserializer.USE_TYPE_INFO_HEADERS, true);
         return new DefaultKafkaConsumerFactory<>(
                 props,
                 new StringDeserializer(),

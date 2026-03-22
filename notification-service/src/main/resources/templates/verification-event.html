@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta>
     <title>Verification</title>
 </head>
 <body>
-<div class="container">
-    <h1>Verification User</h1>
-    <p>Dear: <span th:text="${username}"></span> </p>
+<div style="font-family: Arial, sans-serif; max-width:500px; margin:auto; line-height:1.5;">
+    <h3 style="color:#333;">Verification User</h3>
+    <p>Dear: <span th:text="${username}"></span></p>
     <p> Thank you for registering.</p>
     <p>Please confirm your email address by clicking the button below:</p>
     <p>
-        <a th:href="${verificationLink}">
+        <a th:href="${verificationLink}"
+           style="display:inline-block;padding:10px 20px;background:#0056b3;color:#fff;text-decoration:none;border-radius:5px;font-weight:bold;">
             Verify Email
         </a>
     </p>
     <p>This link will expire in one hour.</p>
-    <h3>Regards, Kishor Pandey</h3>
+    <h4>Regards, Kishor Pandey</h4>
 </div>
 </body>
 </html>
