@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "verify_token_db")
+@Table
 @Getter
 @Setter
 @NoArgsConstructor

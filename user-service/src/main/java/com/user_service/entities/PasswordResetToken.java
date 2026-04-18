@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "password_reset_db")
+@Table
 @Getter
 @Setter
 @NoArgsConstructor

@@ -3,7 +3,6 @@ package com.user_service.controller;
 import com.user_service.dto.*;
 import com.user_service.service.UserService;
 import common.events.dto.ApiResponse;
-import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,16 +12,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
 
-    private static final String MESSAGE = "message";
     private final UserService userService;
 
     @PostMapping("/register")
@@ -75,7 +72,7 @@ public class UserController {
             @Valid @RequestBody AuthRequest authRequest
     ) {
 
-        AuthResponse authResponse = userService.generateJwtToken(authRequest);
+        AuthResponse authResponse = userService.login(authRequest);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.<AuthResponse>builder()
@@ -117,80 +114,152 @@ public class UserController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
-        Map<String, Object> objectMap = userService.refreshToken(refreshRequest);
-        return new ResponseEntity<>(objectMap, HttpStatus.OK);
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(
+            @Valid @RequestBody RefreshRequest refreshRequest
+    ) {
+        AuthResponse authResponse = userService.refreshToken(refreshRequest);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<AuthResponse>builder()
+                        .message("Token generated successfully")
+                        .data(authResponse)
+                        .status(200)
+                        .success(true)
+                        .build()
+                );
     }
 
     @PostMapping("/changePassword")
-    public ResponseEntity<Map<String, String>> changePassword(
+    public ResponseEntity<ApiResponse<String>> changePassword(
             @Valid @RequestBody PasswordModel passwordModel
     ) {
         if (!userService.checkIfValidOldPassword(passwordModel.getOldPassword())) {
-            return new ResponseEntity<>(Map.of(
-                    MESSAGE, "Invalid Old Password"
-            ), HttpStatus.BAD_REQUEST);
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.<String>builder()
+                            .message("Invalid Old Password")
+                            .success(false)
+                            .status(400)
+                            .build()
+                    );
         }
         if (userService.passwordMatches(passwordModel.getNewPassword())) {
-            return new ResponseEntity<>(Map.of(
-                    MESSAGE, "New password must be different from the previous password"
-            ), HttpStatus.CONFLICT);
+
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.<String>builder()
+                            .message("New password must be different from the previous password")
+                            .success(false)
+                            .status(409)
+                            .build()
+                    );
         }
         if (!passwordModel.getNewPassword().equals(passwordModel.getConfirmPassword())) {
-            return new ResponseEntity<>(Map.of(
-                    MESSAGE, "New Password and Confirm New Password do not match"
-            ), HttpStatus.BAD_REQUEST);
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.<String>builder()
+                            .message("New Password and Confirm New Password do not match")
+                            .success(false)
+                            .status(400)
+                            .build()
+                    );
         }
         userService.changedPassword(passwordModel.getNewPassword());
-        return new ResponseEntity<>(Map.of(
-                MESSAGE, "Password Change Successfully"
-        ), HttpStatus.OK);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<String>builder()
+                        .message("Password Change Successfully")
+                        .success(true)
+                        .status(200)
+                        .build()
+                );
     }
 
     @PostMapping("/resetPassword")
-    public ResponseEntity<Map<String, String>> resetPassword(
+    public ResponseEntity<ApiResponse<String>> resetPassword(
             @Valid @RequestBody ResetPasswordModel resetPasswordModel
     ) {
         userService.generatePasswordResetToken(resetPasswordModel.getEmail());
-        return new ResponseEntity<>(Map.of(
-                MESSAGE, "Password reset link sent to your email"
-        ), HttpStatus.OK);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<String>builder()
+                        .message("Password reset link sent to your email")
+                        .success(true)
+                        .status(200)
+                        .build()
+                );
     }
 
-    @Hidden
     @PostMapping("/savePassword")
-    public ResponseEntity<Map<String, String>> savePassword(
+    public ResponseEntity<ApiResponse<String>> savePassword(
             @RequestParam("token") String token,
             @Valid @RequestBody SavePassword savePassword
     ) {
-        boolean success = userService.validatePasswordResetToken(token, savePassword);
+        boolean success = userService
+                .validatePasswordResetToken(token, savePassword);
+
         if (success) {
-            return new ResponseEntity<>(Map.of(
-                    MESSAGE, "Password Change Successfully"
-            ), HttpStatus.OK);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(ApiResponse.<String>builder()
+                            .message("Password Change Successfully")
+                            .success(true)
+                            .status(200)
+                            .build()
+                    );
         }
-        return new ResponseEntity<>(Map.of(
-                MESSAGE, "Reset Password link expired or invalid"
-        ), HttpStatus.BAD_REQUEST);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.<String>builder()
+                        .message("Reset Password link expired or invalid")
+                        .success(false)
+                        .status(400)
+                        .build()
+                );
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable("id") UUID id) {
+    public ResponseEntity<ApiResponse<String>> deleteUser(
+            @PathVariable("id") UUID id) {
+
         userService.deleteUser(id);
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User deleted successfully");
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<String>builder()
+                        .message("User deleted successfully")
+                        .success(true)
+                        .status(200)
+                        .build());
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping
-    public ResponseEntity<List<UserResponse>> findAllUser() {
-        List<UserResponse> users = userService.findAllUsers();
-        return new ResponseEntity<>(users, HttpStatus.OK);
+    public ResponseEntity<ApiResponse<List<UserResponse>>> findAllUser() {
+
+        List<UserResponse> userResponses = userService.findAllUsers();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<List<UserResponse>>builder()
+                        .message("Users fetched successfully")
+                        .data(userResponses)
+                        .success(true)
+                        .status(200)
+                        .build()
+                );
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserResponse> findByUserId(@PathVariable("userId") UUID userId) {
-        UserResponse user = userService.findByUserId(userId);
-        return new ResponseEntity<>(user, HttpStatus.OK);
+    public ResponseEntity<ApiResponse<UserResponse>> findByUserId(
+            @PathVariable("userId") UUID userId) {
+
+        UserResponse userResponse = userService.findByUserId(userId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<UserResponse>builder()
+                        .message("User fetched successfully")
+                        .data(userResponse)
+                        .success(true)
+                        .status(200)
+                        .build()
+                );
     }
 }

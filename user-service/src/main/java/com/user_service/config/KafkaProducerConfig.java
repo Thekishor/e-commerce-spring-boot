@@ -17,8 +17,13 @@ import java.util.Map;
 public class KafkaProducerConfig {
 
     @Bean
-    public NewTopic newTopic() {
-        return new NewTopic("user-registration", 3, (short) 1);
+    public NewTopic newTopicForVerification() {
+        return new NewTopic("user-verification-topic", 3, (short) 1);
+    }
+
+    @Bean
+    public NewTopic newTopicForPasswordReset() {
+        return new NewTopic("user-password-reset-topic", 3, (short) 1);
     }
 
     @Bean

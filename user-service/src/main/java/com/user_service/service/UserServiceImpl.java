@@ -11,7 +11,8 @@ import com.user_service.repository.PasswordResetTokenRepository;
 import com.user_service.repository.UserRepository;
 import com.user_service.repository.VerificationTokenRepository;
 import com.user_service.security.CustomUserDetails;
-import common.events.kafka.UserRegisterEvent;
+import common.events.kafka.UserEvent;
+import common.events.utils.TokenGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,10 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -46,7 +45,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final LoginAttemptService loginAttemptService;
     private final JwtTokenRepository jwtTokenRepository;
-    private final UserVerificationProducer verificationProducer;
+    private final UserEventProducer userEventProducer;
 
     @Override
     @Transactional
@@ -68,27 +67,32 @@ public class UserServiceImpl implements UserService {
     }
 
     private void saveVerificationToken(User savedUser) {
+
         VerificationToken verificationToken = VerificationToken.builder()
                 .user(savedUser)
-                .activationToken(UUID.randomUUID().toString())
-                .activationTokenExpiry(LocalDateTime.now().plusHours(1))
+                .activationToken(TokenGenerator.generateToken())
+                .activationTokenExpiry(LocalDateTime.now().plusDays(1))
                 .build();
-        VerificationToken savedToken = verificationTokenRepository.save(verificationToken);
+
+        VerificationToken savedToken = verificationTokenRepository
+                .save(verificationToken);
+
         log.info("User verification information: {}", savedToken);
         sendVerificationLink(savedToken, savedUser);
     }
 
     private void sendVerificationLink(VerificationToken savedToken, User savedUser) {
+
         String verificationLink = url + "/activate?token=" + savedToken.getActivationToken();
-        verificationProducer.sendUserVerificationMessage(
-                UserRegisterEvent.builder()
-                        .eventId(UUID.randomUUID().toString())
-                        .username(savedUser.getUsername())
-                        .userId(savedUser.getId())
-                        .email(savedUser.getEmail())
-                        .url(verificationLink)
-                        .localDateTime(LocalDateTime.now())
-                        .build()
+
+        userEventProducer.sendUserVerificationMessage(UserEvent.builder()
+                .eventId(TokenGenerator.generateEventId())
+                .username(savedUser.getUsername())
+                .userId(savedUser.getId())
+                .email(savedUser.getEmail())
+                .url(verificationLink)
+                .localDateTime(LocalDateTime.now())
+                .build()
         );
     }
 
@@ -96,6 +100,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse findByUserId(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId));
+
         return userMapper.mapUserEntityToUserResponse(user);
     }
 
@@ -119,6 +124,7 @@ public class UserServiceImpl implements UserService {
             log.warn("Activation token should not be null or empty");
             throw new BusinessException(ErrorCode.ACTIVATION_TOKEN);
         }
+
         VerificationToken verificationToken =
                 verificationTokenRepository.findByActivationToken(token);
 
@@ -141,8 +147,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public AuthResponse login(AuthRequest authRequest) {
 
-        User user = userRepository.findByEmail(authRequest.getEmail())
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        User user = findByEmail(authRequest.getEmail());
 
         if (loginAttemptService.isBlocked(authRequest.getEmail())) {
             log.error("Temporarily locked due to too many login attempts: {}", authRequest.getEmail());
@@ -205,7 +210,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void logout() {
-        //Get current auth user from security context holder
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
@@ -214,18 +218,22 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 
-        //Remove all tokens for this user
         jwtTokenRepository.removeAllTokens(authentication.getName());
     }
 
     @Override
-    public Map<String, Object> refreshToken(RefreshRequest refreshRequest) {
-        final String accessToken = jwtservice.refreshAccessToken(refreshRequest.getRefreshToken());
-        return Map.of(
-                "access_token", accessToken,
-                "refresh_token", refreshRequest.getRefreshToken(),
-                "generatedAt", Instant.now().toString()
-        );
+    public AuthResponse refreshToken(RefreshRequest refreshRequest) {
+        final String accessToken = jwtservice
+                .refreshAccessToken(refreshRequest.getRefreshToken());
+
+        UserResponse userResponse = userMapper
+                .mapUserEntityToUserResponse(findByEmail(jwtservice.extractUsername(accessToken)));
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshRequest.getRefreshToken())
+                .userResponse(userResponse)
+                .build();
     }
 
     @Override
@@ -241,6 +249,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void changedPassword(String newPassword) {
         User user = getCurrentLoggedInUser();
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -249,22 +258,30 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void generatePasswordResetToken(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        User user = findByEmail(email);
+
         PasswordResetToken passwordResetToken = PasswordResetToken
-                .builder().user(user)
-                .token(UUID.randomUUID().toString())
+                .builder()
+                .user(user)
+                .token(TokenGenerator.generateToken())
                 .tokenExpiry(LocalDateTime.now().plusHours(1))
                 .build();
-        PasswordResetToken savedPasswordResetToken =
-                passwordResetTokenRepository.save(passwordResetToken);
+
+        PasswordResetToken savedPasswordResetToken = passwordResetTokenRepository
+                .save(passwordResetToken);
+
         String passwordResetLink =
                 url + "/savePassword?token=" + savedPasswordResetToken.getToken();
-        try {
-            //emailService.sendPasswordResetLink(user.getEmail(), passwordResetLink, user.getUsername());
-        } catch (Exception exception) {
-            throw new BusinessException(ErrorCode.INTERNAL_EXCEPTION);
-        }
+
+        userEventProducer.sendUserPasswordResetMessage(UserEvent.builder()
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .eventId(UUID.randomUUID().toString())
+                .eventId(TokenGenerator.generateEventId())
+                .url(passwordResetLink)
+                .localDateTime(LocalDateTime.now())
+                .build());
     }
 
     @Override
@@ -273,7 +290,9 @@ public class UserServiceImpl implements UserService {
             log.warn("Password Reset token should not be null or empty");
             throw new BusinessException(ErrorCode.PASSWORD_RESET_TOKEN);
         }
-        PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(token);
+        PasswordResetToken passwordResetToken = passwordResetTokenRepository
+                .findByToken(token);
+
         User user = userRepository.findById(passwordResetToken.getUser().getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -291,19 +310,32 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserResponse> isEmailVerified() {
-        List<User> verifiedUser = userRepository.findAll().stream().filter(User::getEmailVerified).toList();
-        return verifiedUser.stream().map(userMapper::mapUserEntityToUserResponse).toList();
+
+        List<User> verifiedUser = userRepository.findAll()
+                .stream().filter(User::getEmailVerified).toList();
+
+        return verifiedUser.stream()
+                .map(userMapper::mapUserEntityToUserResponse).toList();
     }
 
     private User getCurrentLoggedInUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        assert authentication != null;
-        return userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        Authentication authentication = SecurityContextHolder.getContext()
+                .getAuthentication();
+
+        if (authentication == null) {
+            log.error("User not found or not authenticated");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_USER);
+        }
+        return findByEmail(authentication.getName());
     }
 
     private boolean isAccountActive(String email) {
         return userRepository.findByEmail(email)
                 .map(User::getIsActive).orElse(false);
+    }
+
+    private User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 }

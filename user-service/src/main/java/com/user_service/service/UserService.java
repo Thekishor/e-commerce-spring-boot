@@ -3,7 +3,6 @@ package com.user_service.service;
 import com.user_service.dto.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public interface UserService {
@@ -22,7 +21,7 @@ public interface UserService {
 
     void logout();
 
-    Map<String, Object> refreshToken(RefreshRequest refreshRequest);
+    AuthResponse refreshToken(RefreshRequest refreshRequest);
 
     boolean checkIfValidOldPassword(String oldPassword);
 

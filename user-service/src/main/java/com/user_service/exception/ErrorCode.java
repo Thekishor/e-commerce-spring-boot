@@ -22,7 +22,8 @@ public enum ErrorCode {
     TOKEN_EXPIRED("TOKEN_EXPIRED", "token expired", HttpStatus.UNAUTHORIZED),
     BLACKLIST_TOKEN("BLACKLIST_TOKEN", "token is blacklisted", HttpStatus.BAD_REQUEST),
     RESOURCE_NOT_FOUND("RESOURCE_NOT_FOUND", "Resource not found", HttpStatus.NOT_FOUND),
-    EMAIL_NOT_VERIFIED("EMAIL_NOT_VERIFIED", "Account not activated. Check your email for verification link", HttpStatus.FORBIDDEN);
+    EMAIL_NOT_VERIFIED("EMAIL_NOT_VERIFIED", "Account not activated. Check your email for verification link", HttpStatus.FORBIDDEN),
+    UNAUTHORIZED_USER("UNAUTHORIZED_USER", "Unauthorized user", HttpStatus.UNAUTHORIZED);
 
     private final String code;
     private final String defaultMessage;
