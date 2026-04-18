@@ -10,7 +10,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
-public class UserRegisterEvent {
+public class UserEvent {
 
     private String eventId;
     private String username;
