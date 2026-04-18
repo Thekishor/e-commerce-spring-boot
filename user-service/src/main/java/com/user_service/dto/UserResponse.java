@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -13,7 +14,7 @@ import java.util.List;
 @Builder
 public class UserResponse {
 
-    private String userId;
+    private UUID userId;
     private String username;
     private String email;
     private List<String> role;

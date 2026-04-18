@@ -4,10 +4,6 @@ import com.user_service.auditing.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -33,13 +29,6 @@ public class User extends BaseEntity {
     private Boolean isActive;
 
     private Boolean emailVerified;
-
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
 
     @PrePersist
     public void setUserDetails() {

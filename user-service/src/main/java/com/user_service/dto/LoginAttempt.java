@@ -9,8 +9,7 @@ import lombok.*;
 @Builder
 public class LoginAttempt {
 
-    private String key;
     private int failedAttemptCount;
-    private long failedAt;
-    private String status;
+    private long lastFailedAt;
+    private boolean isActive;
 }

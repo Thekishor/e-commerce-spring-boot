@@ -1,5 +1,6 @@
 package com.user_service.security;
 
+import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -7,16 +8,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 public class CustomUserDetails implements UserDetails {
 
-    private final String userId;
     private final String email;
     private final String password;
     private final List<String> roles;
 
     public CustomUserDetails(
-            String userId,
+            UUID userId,
             String email,
             String password,
             List<String> roles
@@ -27,9 +28,8 @@ public class CustomUserDetails implements UserDetails {
         this.userId = userId;
     }
 
-    public @Nullable String getUserId() {
-        return userId;
-    }
+    @Getter
+    private final UUID userId;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

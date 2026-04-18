@@ -1,6 +1,8 @@
 package com.user_service.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -26,8 +28,20 @@ public class GlobalExceptionHandler {
         log.debug(exception.getMessage(), exception);
 
         return ResponseEntity.status(exception.getErrorCode().getStatus() != null ?
-                        exception.getErrorCode().getStatus() :
-                        HttpStatus.BAD_REQUEST).body(errorResponse);
+                exception.getErrorCode().getStatus() :
+                HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
+            ResourceNotFoundException exception,
+            HttpServletRequest request) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .message(ErrorCode.RESOURCE_NOT_FOUND.getDefaultMessage())
+                .code(ErrorCode.RESOURCE_NOT_FOUND.getCode())
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(errorResponse);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

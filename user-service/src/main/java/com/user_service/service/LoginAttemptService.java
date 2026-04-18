@@ -14,40 +14,36 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class LoginAttemptService {
 
-    private static final String MAIN_KEY = "LOGIN_ATTEMPTS:";
-    private static final int MAX_ATTEMPT = 5;
-    private static final long LOCK_TIME = TimeUnit.MINUTES.toSeconds(20);
+    private static final String LOGIN_ATTEMPTS_PREFIX = "LOGIN_ATTEMPTS:";
+    private static final int MAX_LOGIN_ATTEMPT = 5;
+    private static final long LOCK_TIME = TimeUnit.MINUTES.toSeconds(60);
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
     public void loginSucceeded(String username) {
-        String userKey = MAIN_KEY + username;
+        String userKey = LOGIN_ATTEMPTS_PREFIX + username;
         redisTemplate.delete(userKey);
     }
 
     public void loginFailed(String username) {
-        String userKey = MAIN_KEY + username;
-        Object object = redisTemplate.opsForValue().get(userKey);
+        String userKey = LOGIN_ATTEMPTS_PREFIX + username;
 
-        LoginAttempt loginAttempt =
-                objectMapper.convertValue(object, LoginAttempt.class);
+        LoginAttempt loginAttempt = objectMapper
+                .convertValue(redisTemplate.opsForValue().get(userKey), LoginAttempt.class);
 
         if (loginAttempt == null) {
-            loginAttempt = LoginAttempt
-                    .builder()
-                    .key(userKey)
+            loginAttempt = LoginAttempt.builder()
                     .failedAttemptCount(1)
+                    .isActive(true)
+                    .lastFailedAt(System.currentTimeMillis())
                     .build();
         } else {
             loginAttempt.setFailedAttemptCount(loginAttempt.getFailedAttemptCount() + 1);
-            redisTemplate.opsForValue().set(userKey, loginAttempt);
+            loginAttempt.setLastFailedAt(System.currentTimeMillis());
         }
-        loginAttempt.setFailedAt(System.currentTimeMillis());
-        loginAttempt.setStatus("ACTIVE");
 
-        if (loginAttempt.getFailedAttemptCount() >= MAX_ATTEMPT) {
-            loginAttempt.setStatus("BLOCKED");
-            loginAttempt.setFailedAt(System.currentTimeMillis());
+        if (loginAttempt.getFailedAttemptCount() > MAX_LOGIN_ATTEMPT) {
+            loginAttempt.setActive(false);
             redisTemplate.opsForValue()
                     .set(userKey, loginAttempt, LOCK_TIME, TimeUnit.SECONDS);
         } else {
@@ -56,18 +52,15 @@ public class LoginAttemptService {
     }
 
     public boolean isBlocked(String username) {
-        String userKey = MAIN_KEY + username;
-        log.info("User key: {}", userKey);
-        Object object = redisTemplate.opsForValue().get(userKey);
-        log.info("Object from redis in memory: {}", object);
+        String userKey = LOGIN_ATTEMPTS_PREFIX + username;
 
-        if (object == null) {
+        LoginAttempt loginAttempt = objectMapper
+                .convertValue(redisTemplate.opsForValue().get(userKey), LoginAttempt.class);
+
+        if (loginAttempt == null) {
             return false;
         }
-        LoginAttempt loginAttempt =
-                objectMapper.convertValue(object, LoginAttempt.class);
-        log.info("LoginAttempt information of users: {}", loginAttempt);
 
-        return loginAttempt.getFailedAttemptCount() >= MAX_ATTEMPT;
+        return loginAttempt.getFailedAttemptCount() > MAX_LOGIN_ATTEMPT;
     }
 }

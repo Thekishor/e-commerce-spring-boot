@@ -9,7 +9,6 @@ import com.user_service.exception.ErrorCode;
 import com.user_service.mapper.UserMapper;
 import com.user_service.repository.UserRepository;
 import com.user_service.repository.VerificationTokenRepository;
-import com.user_service.service.EmailService;
 import com.user_service.service.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -77,7 +76,6 @@ class UserServiceApplicationTests {
                 .username("Kishor Pandey")
                 .email("kishorpandey829@gmail.com")
                 .password(passwordEncoder.encode("Kishor3344@@##"))
-                .createdAt(LocalDateTime.now())
                 .emailVerified(true)
                 .role(List.of("ADMIN"))
                 .build();

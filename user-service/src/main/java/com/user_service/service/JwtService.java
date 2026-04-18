@@ -38,7 +38,7 @@ public class JwtService {
     private long refreshTokenExpirationTime;
 
     @Value("${jwt.secret.key}")
-    private String SECRET_KEY;
+    private String secretKey;
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtTokenRepository jwtTokenRepository;
@@ -72,7 +72,7 @@ public class JwtService {
     }
 
     private SecretKey getSignKey() {
-        byte[] bytes = Decoders.BASE64.decode(SECRET_KEY);
+        byte[] bytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(bytes);
     }
 

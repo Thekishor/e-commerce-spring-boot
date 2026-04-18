@@ -4,22 +4,21 @@ import com.user_service.dto.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public interface UserService {
 
     UserResponse createUser(UserRequest userRequest);
 
-    UserResponse findByUserId(String userId);
+    UserResponse findByUserId(UUID userId);
 
     List<UserResponse> findAllUsers();
 
-    void deleteUser(Integer id);
+    void deleteUser(UUID id);
 
     boolean activatedProfile(String token);
 
-    boolean isAccountActive(String email);
-
-    Map<String, Object> generateJwtToken(AuthRequest authRequest);
+    AuthResponse login(AuthRequest authRequest);
 
     void logout();
 

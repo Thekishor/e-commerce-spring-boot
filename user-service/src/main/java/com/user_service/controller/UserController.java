@@ -2,6 +2,7 @@ package com.user_service.controller;
 
 import com.user_service.dto.*;
 import com.user_service.service.UserService;
+import common.events.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,9 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/user")
@@ -25,61 +26,94 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> createUser(
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(
             @Valid @RequestBody UserRequest userRequest
     ) {
-        UserResponse userResponse = userService.createUser(userRequest);
-        log.info("Current register user information: {} {}", userResponse, LocalDateTime.now());
-        return new ResponseEntity<>(Map.of(
-                MESSAGE, "Please check your email to verify your account"
-        ), HttpStatus.CREATED);
+        UserResponse userResponse =
+                userService.createUser(userRequest);
+
+        log.info("User Response : {}", userResponse);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.<UserResponse>builder()
+                        .message("Please check your email to verify your account")
+                        .data(userResponse)
+                        .success(true)
+                        .status(200)
+                        .build()
+                );
     }
 
-    @Hidden
     @GetMapping("/activate")
-    public ResponseEntity<String> activateProfile(@RequestParam String token) {
-        try {
-            boolean isActivated = userService.activatedProfile(token);
-            if (isActivated) {
-                return ResponseEntity.ok("Profile activated successfully");
-            } else {
-                return ResponseEntity.status(HttpStatus.GONE)
-                        .body("Email verification link expired. Please sign up again");
-            }
-        } catch (Exception exception) {
-            throw new RuntimeException(exception.getMessage());
+    public ResponseEntity<ApiResponse<String>> activateProfile(
+            @RequestParam String token) {
+
+        boolean isActivated =
+                userService.activatedProfile(token);
+
+        if (isActivated) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(ApiResponse.<String>builder()
+                            .message("Profile activated successfully")
+                            .success(true)
+                            .status(200)
+                            .build());
+
+        } else {
+            return ResponseEntity.status(HttpStatus.GONE)
+                    .body(ApiResponse.<String>builder()
+                            .message("Email verification link expired. Please sign up again")
+                            .success(false)
+                            .status(410)
+                            .build()
+                    );
         }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody AuthRequest authRequest) {
-        try {
-            if (!userService.isAccountActive(authRequest.getEmail())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of(
-                                MESSAGE, "User not found with email"
-                        ));
-            }
-            Map<String, Object> response = userService.generateJwtToken(authRequest);
-            return ResponseEntity.ok(response);
-        } catch (Exception exception) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of(
-                            MESSAGE, exception.getMessage()
-                    ));
-        }
+    public ResponseEntity<ApiResponse<AuthResponse>> login(
+            @Valid @RequestBody AuthRequest authRequest
+    ) {
+
+        AuthResponse authResponse = userService.generateJwtToken(authRequest);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<AuthResponse>builder()
+                        .message("User logged in successfully")
+                        .data(authResponse)
+                        .success(true)
+                        .status(200)
+                        .build());
     }
 
-    @GetMapping("/isEmailVerified")
-    public ResponseEntity<List<UserResponse>> getEmailVerifiedUser() {
-        List<UserResponse> emailVerified = userService.isEmailVerified();
-        return new ResponseEntity<>(emailVerified, HttpStatus.OK);
+    @GetMapping("/verified")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getEmailVerifiedUser() {
+
+        List<UserResponse> userResponses = userService.isEmailVerified();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<List<UserResponse>>builder()
+                        .message("Verified Users")
+                        .data(userResponses)
+                        .success(true)
+                        .status(200)
+                        .build()
+                );
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout() {
+    public ResponseEntity<ApiResponse<String>> logout() {
+
         userService.logout();
-        return ResponseEntity.ok("You have been signed out");
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<String>builder()
+                        .message("You have been signed out")
+                        .success(true)
+                        .status(200)
+                        .build()
+                );
     }
 
     @PostMapping("/refresh")
@@ -142,7 +176,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable("id") Integer id) {
+    public ResponseEntity<?> deleteUser(@PathVariable("id") UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User deleted successfully");
     }
@@ -155,7 +189,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserResponse> findByUserId(@PathVariable("userId") String userId) {
+    public ResponseEntity<UserResponse> findByUserId(@PathVariable("userId") UUID userId) {
         UserResponse user = userService.findByUserId(userId);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }

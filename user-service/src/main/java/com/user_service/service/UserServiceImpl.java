@@ -41,7 +41,6 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final VerificationTokenRepository verificationTokenRepository;
-    private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtservice;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -50,20 +49,22 @@ public class UserServiceImpl implements UserService {
     private final UserVerificationProducer verificationProducer;
 
     @Override
+    @Transactional
     public UserResponse createUser(UserRequest userRequest) {
-        if (userRepository.existsByEmail(userRequest.getEmail())) {
-            log.error("User already exists with email: {}", userRequest.getEmail());
-            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
-        }
-        log.info("User email {}", userRequest.getEmail());
+        checkUserEmail(userRequest.getEmail());
+
         User user = userMapper.mapUserRequestToUserEntity(userRequest);
-        user.setUserId(UUID.randomUUID().toString());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        log.info("Mapped user information: {}", user);
         User savedUser = userRepository.save(user);
-        log.info("User registered successfully {}", savedUser);
         saveVerificationToken(savedUser);
         return userMapper.mapUserEntityToUserResponse(savedUser);
+    }
+
+    private void checkUserEmail(String email) {
+        final boolean existsEmail = this.userRepository.existsByEmail(email);
+        if (existsEmail) {
+            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
     }
 
     private void saveVerificationToken(User savedUser) {
@@ -83,7 +84,7 @@ public class UserServiceImpl implements UserService {
                 UserRegisterEvent.builder()
                         .eventId(UUID.randomUUID().toString())
                         .username(savedUser.getUsername())
-                        .userId(savedUser.getUserId())
+                        .userId(savedUser.getId())
                         .email(savedUser.getEmail())
                         .url(verificationLink)
                         .localDateTime(LocalDateTime.now())
@@ -92,11 +93,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse findByUserId(String userId) {
-        log.info("User with Id {}", userId);
-        User user = userRepository.findByUserId(userId)
+    public UserResponse findByUserId(UUID userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId));
-        log.debug("User find with id {}", user);
         return userMapper.mapUserEntityToUserResponse(user);
     }
 
@@ -108,9 +107,9 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public void deleteUser(Integer id) {
+    public void deleteUser(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, id));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         userRepository.delete(user);
     }
 
@@ -122,8 +121,10 @@ public class UserServiceImpl implements UserService {
         }
         VerificationToken verificationToken =
                 verificationTokenRepository.findByActivationToken(token);
+
         User user = userRepository.findById(verificationToken.getUser().getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
         if (verificationToken.getActivationTokenExpiry().isAfter(LocalDateTime.now())) {
             user.setIsActive(true);
             user.setEmailVerified(true);
@@ -138,65 +139,68 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean isAccountActive(String email) {
-        return userRepository.findByEmail(email)
-                .map(User::getIsActive).orElse(false);
-    }
+    public AuthResponse login(AuthRequest authRequest) {
 
-    @Override
-    public Map<String, Object> generateJwtToken(AuthRequest authRequest) {
+        User user = userRepository.findByEmail(authRequest.getEmail())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (loginAttemptService.isBlocked(authRequest.getEmail())) {
-            log.error("User have been temporarily locked due to too many login attempts: {}", authRequest.getEmail());
+            log.error("Temporarily locked due to too many login attempts: {}", authRequest.getEmail());
             throw new BusinessException(ErrorCode.LOGIN_ATTEMPT);
         }
 
-        try {
-            final Authentication authenticate = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            authRequest.getEmail(),
-                            authRequest.getPassword())
-            );
-
-            SecurityContextHolder.getContext().setAuthentication(authenticate);
-
-            log.info("Authentication user info from dao auth provider: {}", authenticate.getPrincipal());
-
-            final CustomUserDetails userDetails =
-                    (CustomUserDetails) authenticate.getPrincipal();
-            log.info("User information from db: {}", userDetails);
-
-            if (userDetails == null) {
-                log.info("User not found with email: {}", authRequest.getEmail());
-                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-
-            loginAttemptService.loginSucceeded(userDetails.getUsername());
-            log.info("Login successful: {}", userDetails.getUsername());
-
-            final String accessToken =
-                    jwtservice.generateAccessToken(userDetails.getUsername(), userDetails);
-            final String refreshToken =
-                    jwtservice.generateRefreshToken(userDetails.getUsername());
-
-            //store tokens inside redis
-            jwtTokenRepository.storeToken(
-                    userDetails.getUsername(),
-                    accessToken,
-                    refreshToken
-            );
-
-            return Map.of(
-                    "access_token", accessToken,
-                    "refresh_token", refreshToken,
-                    "authorities", userDetails.getAuthorities(),
-                    "generatedAt", Instant.now().toString()
-            );
-        } catch (Exception exception) {
-            loginAttemptService.loginFailed(authRequest.getEmail());
-            log.info("Invalid username or password. {}", authRequest.getEmail());
-            throw new BusinessException(ErrorCode.BAD_CREDENTIALS);
+        if (!isAccountActive(authRequest.getEmail())) {
+            log.error("Account not activated. Check your email for verification link.");
+            throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
+
+
+        final Authentication authenticate = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        authRequest.getEmail(),
+                        authRequest.getPassword())
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authenticate);
+
+        log.info("Authentication user info from dao auth provider: {}",
+                authenticate.getPrincipal());
+
+        final CustomUserDetails userDetails =
+                (CustomUserDetails) authenticate.getPrincipal();
+        log.info("User information from db: {}", userDetails);
+
+        if (userDetails == null) {
+            log.info("User not found with email: {}", authRequest.getEmail());
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        loginAttemptService.loginSucceeded(userDetails.getUsername());
+        log.info("Login successful: {}", userDetails.getUsername());
+
+        final String accessToken = jwtservice.
+                generateAccessToken(userDetails.getUsername(), userDetails);
+
+        final String refreshToken = jwtservice.
+                generateRefreshToken(userDetails.getUsername());
+
+        jwtTokenRepository.storeToken(
+                userDetails.getUsername(),
+                accessToken,
+                refreshToken
+        );
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .userResponse(UserResponse.builder()
+                        .userId(user.getId())
+                        .email(user.getEmail())
+                        .isActive(user.getIsActive())
+                        .role(user.getRole())
+                        .username(user.getUsername())
+                        .build())
+                .build();
     }
 
     @Override
@@ -257,7 +261,7 @@ public class UserServiceImpl implements UserService {
         String passwordResetLink =
                 url + "/savePassword?token=" + savedPasswordResetToken.getToken();
         try {
-            emailService.sendPasswordResetLink(user.getEmail(), passwordResetLink, user.getUsername());
+            //emailService.sendPasswordResetLink(user.getEmail(), passwordResetLink, user.getUsername());
         } catch (Exception exception) {
             throw new BusinessException(ErrorCode.INTERNAL_EXCEPTION);
         }
@@ -296,5 +300,10 @@ public class UserServiceImpl implements UserService {
         assert authentication != null;
         return userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private boolean isAccountActive(String email) {
+        return userRepository.findByEmail(email)
+                .map(User::getIsActive).orElse(false);
     }
 }

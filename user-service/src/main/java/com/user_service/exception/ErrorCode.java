@@ -1,9 +1,11 @@
 package com.user_service.exception;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 @Getter
+@AllArgsConstructor
 public enum ErrorCode {
 
     USER_NOT_FOUND("USER_NOT_FOUND", "User not found with id %s", HttpStatus.NOT_FOUND),
@@ -18,19 +20,11 @@ public enum ErrorCode {
     PASSWORD_RESET_TOKEN("PASSWORD_RESET_TOKEN", "Password Reset token should not be null or empty", HttpStatus.BAD_REQUEST),
     INVALID_TOKEN("INVALID_TOKEN", "Invalid token type", HttpStatus.BAD_REQUEST),
     TOKEN_EXPIRED("TOKEN_EXPIRED", "token expired", HttpStatus.UNAUTHORIZED),
-    BLACKLIST_TOKEN("BLACKLIST_TOKEN", "token is blacklisted", HttpStatus.BAD_REQUEST);
+    BLACKLIST_TOKEN("BLACKLIST_TOKEN", "token is blacklisted", HttpStatus.BAD_REQUEST),
+    RESOURCE_NOT_FOUND("RESOURCE_NOT_FOUND", "Resource not found", HttpStatus.NOT_FOUND),
+    EMAIL_NOT_VERIFIED("EMAIL_NOT_VERIFIED", "Account not activated. Check your email for verification link", HttpStatus.FORBIDDEN);
 
     private final String code;
     private final String defaultMessage;
     private final HttpStatus status;
-
-    ErrorCode(
-            final String code,
-            final String defaultMessage,
-            final HttpStatus status
-    ) {
-        this.code = code;
-        this.defaultMessage = defaultMessage;
-        this.status = status;
-    }
 }

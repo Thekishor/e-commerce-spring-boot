@@ -1,5 +1,6 @@
 package com.user_service.config;
 
+import com.user_service.security.AuthEntryPoint;
 import com.user_service.security.CustomUserDetailsService;
 import com.user_service.security.JwtAuthFilter;
 import common.events.utils.PermitUrls;
@@ -25,9 +26,10 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
+    private final AuthEntryPoint authEntryPoint;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
@@ -36,6 +38,8 @@ public class SecurityConfig {
                         .requestMatchers(PermitUrls.OPENAPI_URLS).permitAll()
                         .anyRequest().authenticated())
                 .userDetailsService(customUserDetailsService)
+                .exceptionHandling(ex ->
+                        ex.authenticationEntryPoint(authEntryPoint))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -43,7 +47,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration
+    ) {
         return authenticationConfiguration.getAuthenticationManager();
     }
 }
