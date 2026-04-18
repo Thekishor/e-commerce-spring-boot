@@ -3,6 +3,7 @@ package common.events.kafka;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -13,7 +14,7 @@ public class UserRegisterEvent {
 
     private String eventId;
     private String username;
-    private String userId;
+    private UUID userId;
     private String email;
     private String url;
     private LocalDateTime localDateTime;

@@ -2,6 +2,8 @@ package common.events.utils;
 
 public class PermitUrls {
 
+    private PermitUrls(){}
+
     public static final String[] SERVICE_URLS = {
             "/api/user/login",
             "/api/user/register",
