@@ -1,7 +1,7 @@
 package com.notification_service.config;
 
 import common.events.kafka.OrderEvent;
-import common.events.kafka.UserRegisterEvent;
+import common.events.kafka.UserEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.context.annotation.Bean;
@@ -35,7 +35,7 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ConsumerFactory<String, UserRegisterEvent> consumerFactoryUserEvent() {
+    public ConsumerFactory<String, UserEvent> consumerFactoryUserEvent() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "user-event-group");
@@ -45,7 +45,7 @@ public class KafkaConfig {
         return new DefaultKafkaConsumerFactory<>(
                 props,
                 new StringDeserializer(),
-                new JacksonJsonDeserializer<>(UserRegisterEvent.class)
+                new JacksonJsonDeserializer<>(UserEvent.class)
         );
     }
 
@@ -58,8 +58,8 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, UserRegisterEvent> listenerContainerFactoryUserEvent() {
-        ConcurrentKafkaListenerContainerFactory<String, UserRegisterEvent> containerFactory =
+    public ConcurrentKafkaListenerContainerFactory<String, UserEvent> listenerContainerFactoryUserEvent() {
+        ConcurrentKafkaListenerContainerFactory<String, UserEvent> containerFactory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         containerFactory.setConsumerFactory((consumerFactoryUserEvent()));
         return containerFactory;

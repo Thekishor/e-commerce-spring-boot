@@ -4,7 +4,7 @@ import com.notification_service.constant.NotificationEvent;
 import com.notification_service.constant.NotificationStatus;
 import com.notification_service.entities.Notification;
 import com.notification_service.repository.NotificationRepository;
-import common.events.kafka.UserRegisterEvent;
+import common.events.kafka.UserEvent;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,9 +15,7 @@ import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 import common.events.kafka.OrderEvent;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
-import java.net.ConnectException;
 import java.time.LocalDateTime;
 
 @Service
@@ -30,13 +28,7 @@ public class KafkaConsumer {
 
     @RetryableTopic(
             attempts = "4",
-            backOff = @BackOff(delay = 3000, multiplier = 1.5, maxDelay = 15000),
-            include = {ConnectException.class},
-            exclude = {
-                    NullPointerException.class,
-                    IllegalArgumentException.class,
-                    MethodArgumentNotValidException.class
-            }
+            backOff = @BackOff(delay = 3000, multiplier = 1.5, maxDelay = 15000)
     )
     @KafkaListener(
             topics = "order-event",
@@ -90,13 +82,7 @@ public class KafkaConsumer {
 
     @RetryableTopic(
             attempts = "4",
-            backOff = @BackOff(delay = 3000, multiplier = 1.5, maxDelay = 15000),
-            include = {ConnectException.class},
-            exclude = {
-                    NullPointerException.class,
-                    IllegalArgumentException.class,
-                    MethodArgumentNotValidException.class
-            }
+            backOff = @BackOff(delay = 3000, multiplier = 1.5, maxDelay = 15000)
     )
     @KafkaListener(
             topics = "user-registration",
@@ -104,31 +90,31 @@ public class KafkaConsumer {
             containerFactory = "listenerContainerFactoryUserEvent"
     )
     public void consumeUserVerificationUrl(
-            UserRegisterEvent userRegisterEvent,
+            UserEvent userEvent,
             Acknowledgment acknowledgment
     ) throws MessagingException {
         log.info("Consuming the message from user");
 
-        if (notificationRepository.existsByEventId(userRegisterEvent.getEventId())) {
-            log.info("Duplicate user register event received: {}", userRegisterEvent.getEventId());
+        if (notificationRepository.existsByEventId(userEvent.getEventId())) {
+            log.info("Duplicate user register event received: {}", userEvent.getEventId());
         }
 
         Notification notification = Notification.builder()
                 .notificationEvent(NotificationEvent.USER_VERIFICATION_EVENT)
-                .eventId(userRegisterEvent.getEventId())
+                .eventId(userEvent.getEventId())
                 .notificationStatus(NotificationStatus.PROCESSING)
-                .localDateTime(userRegisterEvent.getLocalDateTime())
-                .userEmail(userRegisterEvent.getEmail())
-                .userId(userRegisterEvent.getUserId())
+                .localDateTime(userEvent.getLocalDateTime())
+                .userEmail(userEvent.getEmail())
+                .userId(userEvent.getUserId())
                 .build();
 
         notificationRepository.save(notification);
 
         try {
             emailService.sendUserVerificationEmail(
-                    userRegisterEvent.getEmail(),
-                    userRegisterEvent.getUsername(),
-                    userRegisterEvent.getUrl()
+                    userEvent.getEmail(),
+                    userEvent.getUsername(),
+                    userEvent.getUrl()
             );
         } catch (Exception exception) {
             notification.setNotificationStatus(NotificationStatus.FAILED);
@@ -143,7 +129,7 @@ public class KafkaConsumer {
     }
 
     @DltHandler
-    public void userEventListenDLT(UserRegisterEvent userRegisterEvent) {
-        log.info("DLT Received -> UserEvent: {}", userRegisterEvent);
+    public void userEventListenDLT(UserEvent userEvent) {
+        log.info("DLT Received -> UserEvent: {}", userEvent);
     }
 }
