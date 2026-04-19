@@ -4,6 +4,8 @@ import com.user_service.auditing.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.envers.Audited;
+
 import java.util.List;
 
 @Entity
@@ -14,6 +16,7 @@ import java.util.List;
 @Setter
 @SuperBuilder
 @ToString(callSuper = true)
+@Audited
 public class User extends BaseEntity {
 
     private String username;
