@@ -67,7 +67,6 @@ public class EmailService {
 
     public void sendUserVerificationEmail(
             String toEmail,
-            String username,
             String verificationLink
     ) throws MessagingException {
         MimeMessage message = javaMailSender.createMimeMessage();
@@ -77,7 +76,6 @@ public class EmailService {
         final String subject = EmailTemplates.VERIFICATION_EVENT.getSubject();
 
         Map<String, Object> variable = new HashMap<>();
-        variable.put("username", username);
         variable.put("verificationLink", verificationLink);
 
         Context context = new Context();

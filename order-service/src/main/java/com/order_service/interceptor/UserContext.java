@@ -1,6 +1,5 @@
 package com.order_service.interceptor;
 
-
 import com.order_service.dto.UserInfo;
 
 public class UserContext {

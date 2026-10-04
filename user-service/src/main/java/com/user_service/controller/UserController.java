@@ -1,6 +1,8 @@
 package com.user_service.controller;
 
 import com.user_service.dto.*;
+import com.user_service.exception.BusinessException;
+import com.user_service.exception.ErrorCode;
 import com.user_service.service.UserService;
 import common.events.dto.ApiResponse;
 import jakarta.validation.Valid;
@@ -29,7 +31,7 @@ public class UserController {
         UserResponse userResponse =
                 userService.createUser(userRequest);
 
-        log.info("User Response : {}", userResponse);
+        log.info("Register User Response : {}", userResponse);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.<UserResponse>builder()
@@ -41,7 +43,7 @@ public class UserController {
                 );
     }
 
-    @GetMapping("/activate")
+    @GetMapping("/verify-email")
     public ResponseEntity<ApiResponse<String>> activateProfile(
             @RequestParam String token) {
 
@@ -57,11 +59,11 @@ public class UserController {
                             .build());
 
         } else {
-            return ResponseEntity.status(HttpStatus.GONE)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(ApiResponse.<String>builder()
-                            .message("Email verification link expired. Please sign up again")
-                            .success(false)
-                            .status(410)
+                            .message("Email verification link expired. New verification link sent to your email address")
+                            .success(true)
+                            .status(200)
                             .build()
                     );
         }
@@ -83,7 +85,7 @@ public class UserController {
                         .build());
     }
 
-    @GetMapping("/verified")
+    @GetMapping("/email-verified")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getEmailVerifiedUser() {
 
@@ -91,7 +93,7 @@ public class UserController {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.<List<UserResponse>>builder()
-                        .message("Verified Users")
+                        .message("Email verified users fetched successfully")
                         .data(userResponses)
                         .success(true)
                         .status(200)
@@ -106,14 +108,14 @@ public class UserController {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.<String>builder()
-                        .message("You have been signed out")
+                        .message("Logout successfully")
                         .success(true)
                         .status(200)
                         .build()
                 );
     }
 
-    @PostMapping("/refresh")
+    @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(
             @Valid @RequestBody RefreshRequest refreshRequest
     ) {
@@ -129,7 +131,7 @@ public class UserController {
                 );
     }
 
-    @PostMapping("/changePassword")
+    @PostMapping("/change-password")
     public ResponseEntity<ApiResponse<String>> changePassword(
             @Valid @RequestBody PasswordModel passwordModel
     ) {
@@ -163,18 +165,19 @@ public class UserController {
                             .build()
                     );
         }
+
         userService.changedPassword(passwordModel.getNewPassword());
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.<String>builder()
-                        .message("Password Change Successfully")
+                        .message("Password Changed Successfully")
                         .success(true)
                         .status(200)
                         .build()
                 );
     }
 
-    @PostMapping("/resetPassword")
+    @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<String>> resetPassword(
             @Valid @RequestBody ResetPasswordModel resetPasswordModel
     ) {
@@ -182,25 +185,30 @@ public class UserController {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.<String>builder()
-                        .message("Password reset link sent to your email")
+                        .message("Password reset link sent to your email address")
                         .success(true)
                         .status(200)
                         .build()
                 );
     }
 
-    @PostMapping("/savePassword")
+    @PostMapping("/save-password")
     public ResponseEntity<ApiResponse<String>> savePassword(
             @RequestParam("token") String token,
             @Valid @RequestBody SavePassword savePassword
     ) {
+
+        if (!savePassword.getNewPassword().equals(savePassword.getConfirmPassword())) {
+            throw new BusinessException(ErrorCode.MISMATCH_PASSWORD);
+        }
+
         boolean success = userService
                 .validatePasswordResetToken(token, savePassword);
 
         if (success) {
             return ResponseEntity.status(HttpStatus.OK)
                     .body(ApiResponse.<String>builder()
-                            .message("Password Change Successfully")
+                            .message("Password Changed Successfully")
                             .success(true)
                             .status(200)
                             .build()
@@ -209,7 +217,7 @@ public class UserController {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.<String>builder()
-                        .message("Reset Password link expired or invalid")
+                        .message("Reset Password link expired or invalid. Please request a new password reset link")
                         .success(false)
                         .status(400)
                         .build()
@@ -255,7 +263,7 @@ public class UserController {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.<UserResponse>builder()
-                        .message("User fetched successfully")
+                        .message("User retrieved successfully")
                         .data(userResponse)
                         .success(true)
                         .status(200)

@@ -3,20 +3,57 @@
 <head>
     <title>Verification</title>
 </head>
-<body>
-<div style="font-family: Arial, sans-serif; max-width:500px; margin:auto; line-height:1.5;">
-    <h3 style="color:#333;">Verification User</h3>
-    <p>Dear: <span th:text="${username}"></span></p>
-    <p> Thank you for registering.</p>
-    <p>Please confirm your email address by clicking the button below:</p>
-    <p>
-        <a th:href="${verificationLink}"
-           style="display:inline-block;padding:10px 20px;background:#0056b3;color:#fff;text-decoration:none;border-radius:5px;font-weight:bold;">
+<body style="margin:0; background:#f5f6f8;">
+<div style="max-width:500px;margin:40px auto;padding:30px;font-family:Arial,sans-serif;color:#222;background:#fff;border:1px solid #e8e8e8;border-radius:8px;">
+
+    <!-- Title -->
+    <h2 style="margin:0 0 18px; font-size:24px;font-weight:600;text-align:center;color:#111827;">
+        Verify Your Email
+    </h2>
+
+    <!-- Message -->
+    <p style="margin:0;font-size:15px;line-height:1.4;color:#555;">
+        Thanks for creating your account! Please verify your email address
+        to complete your registration.
+    </p>
+
+    <!-- Button -->
+    <div style="text-align:center;margin:28px 0;">
+        <a
+                th:href="${verificationLink}"
+                target="_blank"
+                style="
+                display:inline-block;
+                background-color:#111827;
+                color:#ffffff;
+                padding:12px 24px;
+                text-decoration:none;
+                border-radius:7px;
+                font-size:15px;
+                font-weight:600;
+            ">
             Verify Email
         </a>
+    </div>
+
+    <!-- Expiration -->
+    <p style="margin:0 0 14px;font-size:13px;line-height:1.5;color:#777;">
+        This verification link will expire in
+        <strong>24 hours</strong>.
     </p>
-    <p>This link will expire in one hour.</p>
-    <h4>Regards, Kishor Pandey</h4>
+
+    <!-- Security message -->
+    <p style="margin:0;font-size:13px;line-height:1.5;color:#777;">
+        If you didn't create this account, you can safely ignore this email.
+    </p>
+
+    <!-- Divider -->
+    <hr style="border:none;border-top:1px solid #eeeeee;margin:28px 0;">
+
+    <!-- Footer -->
+    <p style="margin:0;text-align:center;font-size:12px;line-height:1.5;color:#999;">
+        This is an automated email. Please do not reply.
+    </p>
 </div>
 </body>
 </html>

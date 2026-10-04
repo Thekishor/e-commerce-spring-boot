@@ -45,7 +45,7 @@ public class OrderController {
 
                 if (userId == null || email == null || roles.isEmpty()) {
                     log.warn("Missing user headers in request");
-                    throw new BusinessException(ErrorCode.USERINFO_FOUND);
+                    throw new BusinessException(ErrorCode.USERINFO_NOT_FOUND);
                 }
                 UserInfo userInfo =
                         new UserInfo(userId, email, roles);

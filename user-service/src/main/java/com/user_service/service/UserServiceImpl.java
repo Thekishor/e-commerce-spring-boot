@@ -71,7 +71,7 @@ public class UserServiceImpl implements UserService {
         VerificationToken verificationToken = VerificationToken.builder()
                 .user(savedUser)
                 .activationToken(TokenGenerator.generateToken())
-                .activationTokenExpiry(LocalDateTime.now().plusDays(1))
+                .activationTokenExpiry(LocalDateTime.now().plusHours(24))
                 .build();
 
         VerificationToken savedToken = verificationTokenRepository
@@ -83,7 +83,7 @@ public class UserServiceImpl implements UserService {
 
     private void sendVerificationLink(VerificationToken savedToken, User savedUser) {
 
-        String verificationLink = url + "/activate?token=" + savedToken.getActivationToken();
+        String verificationLink = url + "/verify-email?token=" + savedToken.getActivationToken();
 
         userEventProducer.sendUserVerificationMessage(UserEvent.builder()
                 .eventId(TokenGenerator.generateEventId())
@@ -139,7 +139,8 @@ public class UserServiceImpl implements UserService {
             return true;
         } else {
             verificationTokenRepository.delete(verificationToken);
-            userRepository.delete(user);
+            // Send a new verification token to the user
+            saveVerificationToken(user);
             return false;
         }
     }
@@ -158,7 +159,6 @@ public class UserServiceImpl implements UserService {
             log.error("Account not activated. Check your email for verification link.");
             throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
-
 
         final Authentication authenticate = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -264,14 +264,14 @@ public class UserServiceImpl implements UserService {
                 .builder()
                 .user(user)
                 .token(TokenGenerator.generateToken())
-                .tokenExpiry(LocalDateTime.now().plusHours(1))
+                .tokenExpiry(LocalDateTime.now().plusMinutes(15))
                 .build();
 
         PasswordResetToken savedPasswordResetToken = passwordResetTokenRepository
                 .save(passwordResetToken);
 
         String passwordResetLink =
-                url + "/savePassword?token=" + savedPasswordResetToken.getToken();
+                url + "/save-password?token=" + savedPasswordResetToken.getToken();
 
         userEventProducer.sendUserPasswordResetMessage(UserEvent.builder()
                 .userId(user.getId())
@@ -290,6 +290,7 @@ public class UserServiceImpl implements UserService {
             log.warn("Password Reset token should not be null or empty");
             throw new BusinessException(ErrorCode.PASSWORD_RESET_TOKEN);
         }
+
         PasswordResetToken passwordResetToken = passwordResetTokenRepository
                 .findByToken(token);
 
@@ -297,14 +298,12 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (passwordResetToken.getTokenExpiry().isAfter(LocalDateTime.now())) {
-            if (!savePassword.getNewPassword().equals(savePassword.getConfirmPassword())) {
-                throw new BusinessException(ErrorCode.MISMATCH_PASSWORD);
-            }
             user.setPassword(passwordEncoder.encode(savePassword.getNewPassword()));
             userRepository.save(user);
             passwordResetTokenRepository.delete(passwordResetToken);
             return true;
         }
+        passwordResetTokenRepository.delete(passwordResetToken);
         return false;
     }
 
@@ -319,6 +318,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private User getCurrentLoggedInUser() {
+
         Authentication authentication = SecurityContextHolder.getContext()
                 .getAuthentication();
 

@@ -105,7 +105,7 @@ public class KafkaConsumer {
                 .notificationStatus(NotificationStatus.PROCESSING)
                 .localDateTime(userEvent.getLocalDateTime())
                 .userEmail(userEvent.getEmail())
-                .userId(userEvent.getUserId())
+                .userId(userEvent.getUserId().toString())
                 .build();
 
         notificationRepository.save(notification);
@@ -113,7 +113,6 @@ public class KafkaConsumer {
         try {
             emailService.sendUserVerificationEmail(
                     userEvent.getEmail(),
-                    userEvent.getUsername(),
                     userEvent.getUrl()
             );
         } catch (Exception exception) {

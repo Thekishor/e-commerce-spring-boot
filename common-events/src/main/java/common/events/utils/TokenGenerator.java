@@ -7,7 +7,7 @@ public class TokenGenerator {
     }
 
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static final int USER_TOKEN_LENGTH = 50;
+    private static final int USER_TOKEN_LENGTH = 128;
     private static final int EVENT_TOKEN_LENGTH = 20;
     private static final SecureRandom secureRandom = new SecureRandom();
 

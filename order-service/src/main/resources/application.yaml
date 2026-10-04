@@ -3,3 +3,13 @@ spring:
     name: order-service
   config:
     import: optional:configserver:http://localhost:9004,optional:file:.env[.properties]
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: ALWAYS
