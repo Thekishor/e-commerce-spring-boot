@@ -7,10 +7,10 @@ public class PermitUrls {
     public static final String[] SERVICE_URLS = {
             "/api/user/login",
             "/api/user/register",
-            "/api/user/refresh",
+            "/api/user/refresh-token",
             "/api/user/activate",
-            "/api/user/resetPassword",
-            "/api/user/savePassword",
+            "/api/user/reset-password",
+            "/api/user/save-password",
             "/actuator/**"
     };
 
